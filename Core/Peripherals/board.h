@@ -15,6 +15,8 @@
 #define B1_PIN GPIO_PIN_13
 #define B1_GPIO_PORT GPIOC
 
+#define BUTTON_PRESSED 0
+#define BUTTON_RELEASE !BUTTON_PRESSED
 void BoardInit(void);
 
 #endif /* INC_BOARD_H_ */

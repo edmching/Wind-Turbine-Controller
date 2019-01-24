@@ -89,18 +89,12 @@ static void MX_USART2_UART_Init(void);
   */
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
+ 
 
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
-
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
 
   /* Configure the system clock */
   SystemClock_Config();
@@ -110,31 +104,16 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-//  MX_GPIO_Init();
-  BoardInit();
   StepmotorGPIOInit();
   MX_USART2_UART_Init();
-  /* USER CODE BEGIN 2 */
-  uint8_t state_isMotorON = 0;
-  /* USER CODE END 2 */
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
-	if(HAL_GPIO_ReadPin(B1_GPIO_PORT, B1_PIN))
-	{
-		state_isMotorON = !state_isMotorON;
-	}
-	if(state_isMotorON)
-	{
-		StepmotorMoveAngle(90,CW);
-		HAL_Delay(1000);
-	}
-    /* USER CODE BEGIN 3 */
+    StepmotorMoveAngle(360,CW, normal);
+    HAL_Delay(1000);
+
   }
-  /* USER CODE END 3 */
+  
 }
 
 /**
@@ -245,50 +224,5 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-
-/**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
-/*
-static void MX_GPIO_Init(void)
-{
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-  // GPIO Ports Clock Enable
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOH_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
-
-  //Configure GPIO pin Output Level
-  HAL_GPIO_WritePin(GPIOA, LD2_Pin|GPIO_PIN_8, GPIO_PIN_RESET);
-
-  //Configure GPIO pin Output Level
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10|GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_RESET);
-
-  //Configure GPIO pin : B1_Pin
-  GPIO_InitStruct.Pin = B1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
-
-  //Configure GPIO pins : LD2_Pin PA8
-  GPIO_InitStruct.Pin = LD2_Pin|GPIO_PIN_8;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  //Configure GPIO pins : PB10 PB4 PB5
-  GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_4|GPIO_PIN_5;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-}
-*/
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

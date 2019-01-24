@@ -40,30 +40,40 @@ void StepmotorGPIOInit(void)
 	  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 }
 
-void StepmotorMoveAngle(int angle, direction _direction)
+void StepmotorMoveAngle(int angle, direction _direction, RPM_Mode RPMmode)
 {
 	volatile int numStepsAngle = angle/(float) (FULL_ROTATATION_IN_DEG/NUM_STEPS_360_DEG);
-
+	volatile int RPM_delay_time;
 	assert_param(numStepsAngle >= 0 && numStepsAngle <= 360);
-
+	switch(RPMmode){
+		case normal:
+			RPM_delay_time = 2;
+			break;
+		case fast:
+			RPM_delay_time = 1;
+			break;
+		default:
+			RPM_delay_time = 3;
+			break;
+	}
 	for (int i = 0; i< numStepsAngle; ++i){
 		if(_direction == CW){
 			Stepmotor_IN1_ON();
-			HAL_Delay(2);
+			HAL_Delay(RPM_delay_time);
 			Stepmotor_IN2_ON();
-			HAL_Delay(2);
+			HAL_Delay(RPM_delay_time);
 			Stepmotor_IN3_ON();
-			HAL_Delay(2);
+			HAL_Delay(RPM_delay_time);
 			Stepmotor_IN4_ON();
 
 		}
 		else if(_direction == CCW){
 			Stepmotor_IN4_ON();
-			HAL_Delay(2);
+			HAL_Delay(RPM_delay_time);
 			Stepmotor_IN3_ON();
-			HAL_Delay(2);
+			HAL_Delay(RPM_delay_time);
 			Stepmotor_IN2_ON();
-			HAL_Delay(2);
+			HAL_Delay(RPM_delay_time);
 			Stepmotor_IN1_ON();
 		}
 	  }

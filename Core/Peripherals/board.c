@@ -21,8 +21,8 @@ void BoardInit(void)
 
   //Configure GPIO pin : B1_PIN
   GPIO_InitStruct.Pin = B1_PIN;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(B1_GPIO_PORT, &GPIO_InitStruct);
 
   //Configure GPIO pins : LD2_PIN
