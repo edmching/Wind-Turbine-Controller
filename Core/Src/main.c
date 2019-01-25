@@ -42,6 +42,7 @@
 #include "main.h"
 #include "adc.h"
 #include "usart.h"
+#include "steppermotor.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -71,9 +72,8 @@
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+static void SystemClock_Config(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -104,15 +104,16 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  printf("Start");
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_ADC1_Init();
+  //StepmotorGPIOInit();
   /* USER CODE BEGIN 2 */
-  printf("test");
+  volatile uint32_t value;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -122,17 +123,22 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  printf("test");
-	  HAL_Delay(1000);
+	HAL_ADC_Start(&hadc1);
+    HAL_ADC_PollForConversion (&hadc1, 1000);
+    value = HAL_ADC_GetValue (&hadc1);
+    printf("\r\n ADC value = %d ", value);
+    HAL_ADC_Stop(&hadc1);
+    HAL_Delay(1000);
   }
   /* USER CODE END 3 */
 }
 
+/* USER CODE BEGIN 4 */
 /**
   * @brief System Clock Configuration
   * @retval None
   */
-void SystemClock_Config(void)
+static void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
@@ -171,25 +177,6 @@ void SystemClock_Config(void)
   }
 }
 
-/* USER CODE BEGIN 4 */
-/*
-int __io_putchar(int ch)
-{
-	ITM_SendChar(ch);
-	return ch;
-}
-
-int _write(int file, char *ptr, int len)
-{
-	int DataIdx;
-
-	for (DataIdx = 0; DataIdx < len; DataIdx++)
-	{
-		__io_putchar(*ptr++);
-	}
-	return len;
-}
-*/
 /* USER CODE END 4 */
 
 /**
