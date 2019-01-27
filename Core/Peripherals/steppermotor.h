@@ -36,6 +36,6 @@ void StepmotorWaveDriveCW (void);
 void StepmotorWaveDriveCCW (void);
 void StepmotorFullDriveCW (void);
 void StepmotorHalfDriveCW (void);
-void StepmotorMoveAngle(int angle, direction _direction, RPM_Mode RPMmode);
+void StepmotorGoalPosition(int angle, direction _direction, RPM_Mode RPMmode);
 
 #endif /* STEPPERMOTOR_H_ */
