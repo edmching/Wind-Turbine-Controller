@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * File Name          : ADC.h
-  * Description        : This file provides code for the configuration
-  *                      of the ADC instances.
+  * File Name          : dma.h
+  * Description        : This file contains all the function prototypes for
+  *                      the dma.c file
   ******************************************************************************
   ** This notice applies to any and all portions of this file
   * that are not between comment pairs USER CODE BEGIN and
@@ -37,8 +37,9 @@
   ******************************************************************************
   */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __adc_H
-#define __adc_H
+#ifndef __dma_H
+#define __dma_H
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -46,17 +47,17 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
+/* DMA memory to memory transfer handles -------------------------------------*/
+
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
 
-extern ADC_HandleTypeDef hadc1;
-
 /* USER CODE BEGIN Private defines */
-#define NUM_OF_CONVERSIONS         2
+
 /* USER CODE END Private defines */
 
-void MX_ADC1_Init(void);
+void MX_DMA_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
@@ -65,11 +66,8 @@ void MX_ADC1_Init(void);
 #ifdef __cplusplus
 }
 #endif
-#endif /*__ adc_H */
 
-/**
-  * @}
-  */
+#endif /* __dma_H */
 
 /**
   * @}

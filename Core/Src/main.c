@@ -41,8 +41,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "dma.h"
 #include "usart.h"
-#include "steppermotor.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -72,8 +72,8 @@
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
-/* USER CODE BEGIN PFP */
 static void SystemClock_Config(void);
+/* USER CODE BEGIN PFP */
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -109,11 +109,13 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_ADC1_Init();
   //StepmotorGPIOInit();
   /* USER CODE BEGIN 2 */
-  volatile uint32_t value;
+  uint32_t g_adc_buf[2];
+  HAL_ADC_Start_DMA(&hadc1,g_adc_buf, 2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -123,17 +125,16 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	HAL_ADC_Start(&hadc1);
-    HAL_ADC_PollForConversion (&hadc1, 1000);
-    value = HAL_ADC_GetValue (&hadc1);
-    printf("\r\n ADC value = %d ", value);
-    HAL_ADC_Stop(&hadc1);
+
+
+    for(int i = 0; i<NUM_OF_CONVERSIONS; ++i){
+      printf("\r\n ADC value is %d", g_adc_buf[i]);
+    }
     HAL_Delay(1000);
   }
   /* USER CODE END 3 */
 }
 
-/* USER CODE BEGIN 4 */
 /**
   * @brief System Clock Configuration
   * @retval None
@@ -176,6 +177,8 @@ static void SystemClock_Config(void)
     Error_Handler();
   }
 }
+
+/* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
 
