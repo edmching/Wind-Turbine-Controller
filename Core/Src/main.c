@@ -119,7 +119,7 @@ int main(void)
   StepmotorGPIOInit();
 
 
-  volatile uint16_t angle, previous_angle ; // 0 to 360 degree
+  volatile uint16_t angle, previous_angle; // 0 to 360 degree
   volatile int16_t difference_angle;
   HAL_ADC_Start_DMA(&hadc1,adc_buf, 2);
   angle = (360*adc_val[0])/4095;
@@ -149,7 +149,6 @@ int main(void)
   }
 	previous_angle = angle;
 
-	//HAL_Delay(10);
   }
   /* USER CODE END 3 */
 }
