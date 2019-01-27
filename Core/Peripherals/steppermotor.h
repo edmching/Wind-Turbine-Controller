@@ -29,13 +29,13 @@
 //uint8_t wave_CCW[4] = {0b0001, 0b0100, 0b0010, 0b0001};
 
 typedef enum {CW,CCW} direction;
-typedef enum {normal, fast} RPM_Mode;
 
 void StepmotorGPIOInit(void);
 void StepmotorWaveDriveCW (void);
 void StepmotorWaveDriveCCW (void);
 void StepmotorFullDriveCW (void);
 void StepmotorHalfDriveCW (void);
-void StepmotorGoalPosition(int angle, direction _direction, RPM_Mode RPMmode);
+void StepmotorMoveAngle(int angle, direction _direction);
+void StepmotorMoveAngleHalfStep(int angle, direction _direction);
 
 #endif /* STEPPERMOTOR_H_ */

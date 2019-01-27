@@ -8,9 +8,13 @@
 #include "steppermotor.h"
 
 static void Stepmotor_IN1_ON(void);
+static void Stepmotor_IN1_N_IN2_ON(void);
 static void Stepmotor_IN2_ON(void);
+static void Stepmotor_IN2_N_IN3_ON(void);
 static void Stepmotor_IN3_ON(void);
+static void Stepmotor_IN3_N_IN4_ON(void);
 static void Stepmotor_IN4_ON(void);
+static void Stepmotor_IN4_N_IN1_ON(void);
 static void Stepmotor_IN_reset(void);
 
 /**
@@ -40,22 +44,59 @@ void StepmotorGPIOInit(void)
 	  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 }
 
-void StepmotorGoalPosition(int angle, direction _direction, RPM_Mode RPMmode)
+void StepmotorMoveAngleHalfStep(int angle, direction _direction)
 {
-	volatile int numStepsAngle = angle/(float) (FULL_ROTATATION_IN_DEG/NUM_STEPS_360_DEG);
-	volatile int RPM_delay_time;
+	int numStepsAngle = angle/(float) (FULL_ROTATATION_IN_DEG/NUM_STEPS_360_DEG);
+	int RPM_delay_time = 2;
 	assert_param(numStepsAngle >= 0 && numStepsAngle <= 360);
-	switch(RPMmode){
-		case normal:
-			RPM_delay_time = 2;
-			break;
-		case fast:
-			RPM_delay_time = 1;
-			break;
-		default:
-			RPM_delay_time = 3;
-			break;
-	}
+
+	for (int i = 0; i< numStepsAngle; ++i){
+		if(_direction == CW){
+			Stepmotor_IN1_ON();
+			HAL_Delay(RPM_delay_time);
+			Stepmotor_IN1_N_IN2_ON();
+			HAL_Delay(RPM_delay_time);
+			Stepmotor_IN2_ON();
+			HAL_Delay(RPM_delay_time);
+			Stepmotor_IN2_N_IN3_ON();
+			HAL_Delay(RPM_delay_time);
+			Stepmotor_IN3_ON();
+			HAL_Delay(RPM_delay_time);
+			Stepmotor_IN3_N_IN4_ON();
+			HAL_Delay(RPM_delay_time);
+			Stepmotor_IN4_ON();
+			HAL_Delay(RPM_delay_time);
+			Stepmotor_IN4_N_IN1_ON();
+
+		}
+		else if(_direction == CCW){
+			Stepmotor_IN4_N_IN1_ON();
+			HAL_Delay(RPM_delay_time);
+			Stepmotor_IN4_ON();
+			HAL_Delay(RPM_delay_time);
+			Stepmotor_IN3_N_IN4_ON();
+			HAL_Delay(RPM_delay_time);
+			Stepmotor_IN3_ON();
+			HAL_Delay(RPM_delay_time);
+			Stepmotor_IN2_N_IN3_ON();
+			HAL_Delay(RPM_delay_time);
+			Stepmotor_IN2_ON();
+			HAL_Delay(RPM_delay_time);
+			Stepmotor_IN1_N_IN2_ON();
+			HAL_Delay(RPM_delay_time);
+			Stepmotor_IN1_ON();
+
+		}
+	  }
+	Stepmotor_IN_reset();
+}
+
+void StepmotorMoveAngle(int angle, direction _direction)
+{
+	int numStepsAngle = angle/(float) (FULL_ROTATATION_IN_DEG/NUM_STEPS_360_DEG);
+	int RPM_delay_time = 2;
+	assert_param(numStepsAngle >= 0 && numStepsAngle <= 360);
+
 	for (int i = 0; i< numStepsAngle; ++i){
 		if(_direction == CW){
 			Stepmotor_IN1_ON();
@@ -65,8 +106,6 @@ void StepmotorGoalPosition(int angle, direction _direction, RPM_Mode RPMmode)
 			Stepmotor_IN3_ON();
 			HAL_Delay(RPM_delay_time);
 			Stepmotor_IN4_ON();
-			Stepmotor_IN_reset();
-
 		}
 		else if(_direction == CCW){
 			Stepmotor_IN4_ON();
@@ -76,9 +115,10 @@ void StepmotorGoalPosition(int angle, direction _direction, RPM_Mode RPMmode)
 			Stepmotor_IN2_ON();
 			HAL_Delay(RPM_delay_time);
 			Stepmotor_IN1_ON();
-			Stepmotor_IN_reset();
+
 		}
 	  }
+	Stepmotor_IN_reset();
 }
 
 
@@ -266,6 +306,12 @@ static void Stepmotor_IN1_ON(void)
 	  HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN4, GPIO_PIN_RESET);
 }
 
+static void Stepmotor_IN1_N_IN2_ON(void){
+	HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN1, GPIO_PIN_SET); //INT1 & INT2
+	HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN2, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN3, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN4, GPIO_PIN_RESET);
+}
 static void Stepmotor_IN2_ON(void)
 {
 	  HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN1, GPIO_PIN_RESET); //INT2
@@ -273,7 +319,12 @@ static void Stepmotor_IN2_ON(void)
 	  HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN3, GPIO_PIN_RESET);
 	  HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN4, GPIO_PIN_RESET);
 }
-
+static void Stepmotor_IN2_N_IN3_ON(void){
+	HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN1, GPIO_PIN_RESET); //INT2 & INT3
+	HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN2, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN3, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN4, GPIO_PIN_RESET);
+}
 static void Stepmotor_IN3_ON(void)
 {
 	  HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN1, GPIO_PIN_RESET); //INT3
@@ -282,6 +333,12 @@ static void Stepmotor_IN3_ON(void)
 	  HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN4, GPIO_PIN_RESET);
 }
 
+static void Stepmotor_IN3_N_IN4_ON(void){
+	HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN1, GPIO_PIN_RESET); //INT3 & INT4
+	HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN2, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN3, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN4, GPIO_PIN_SET);
+}
 static void Stepmotor_IN4_ON(void)
 {
 	  HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN1, GPIO_PIN_RESET); //INT4
@@ -290,6 +347,12 @@ static void Stepmotor_IN4_ON(void)
 	  HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN4, GPIO_PIN_SET);
 }
 
+static void Stepmotor_IN4_N_IN1_ON(void){
+	HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN1, GPIO_PIN_SET); //INT4 & INT1
+	HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN2, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN3, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN4, GPIO_PIN_SET);
+}
 static void Stepmotor_IN_reset(void)
 {
 	  HAL_GPIO_WritePin(STEPMOTOR_PORT_IN, STEPMOTOR_PIN_IN1, GPIO_PIN_RESET);  // turns all off

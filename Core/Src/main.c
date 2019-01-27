@@ -45,9 +45,11 @@
 #include "usart.h"
 #include "gpio.h"
 
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stdbool.h"
+#include "steppermotor.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,7 +70,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+bool g_is_conversion_ready;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -112,10 +114,17 @@ int main(void)
   MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_ADC1_Init();
-  //StepmotorGPIOInit();
   /* USER CODE BEGIN 2 */
-  uint32_t g_adc_buf[2];
-  HAL_ADC_Start_DMA(&hadc1,g_adc_buf, 2);
+  StepmotorGPIOInit();
+
+  uint32_t adc_buf[2];
+  volatile uint16_t angle, previous_angle = 0; // 0 to 360 degree
+  volatile int16_t difference_angle;
+  HAL_ADC_Start_DMA(&hadc1,adc_buf, 2);
+
+  StepmotorMoveAngleHalfStep(360,CW);
+  StepmotorMoveAngleHalfStep(360,CCW);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -125,12 +134,22 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	//startup test;
 
 
-    for(int i = 0; i<NUM_OF_CONVERSIONS; ++i){
-      printf("\r\n ADC value is %d", g_adc_buf[i]);
-    }
-    HAL_Delay(1000);
+
+	angle = (360*adc_buf[0])/4095;
+	difference_angle = angle - previous_angle;
+	printf("\r\n potvalue = %d, angle = %d, previous_angle = %d, difference_angle = %d",
+			adc_buf[0], angle, previous_angle, difference_angle);
+  if(difference_angle > 0){
+	  StepmotorMoveAngleHalfStep(difference_angle,CW);
+  }
+  else if (difference_angle < 0) {
+	StepmotorMoveAngleHalfStep(-difference_angle, CCW);
+  }
+	previous_angle = angle;
+	HAL_Delay(10);
   }
   /* USER CODE END 3 */
 }

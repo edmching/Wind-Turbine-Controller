@@ -41,7 +41,8 @@
 #include "adc.h"
 
 /* USER CODE BEGIN 0 */
-
+#include "stdbool.h"
+extern bool g_is_conversion_ready;
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc1;
@@ -169,6 +170,8 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 /* USER CODE BEGIN 1 */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
+
+	g_is_conversion_ready = true;
 
 }
 /* USER CODE END 1 */
