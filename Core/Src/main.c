@@ -70,7 +70,8 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-bool g_is_conversion_ready;
+//bool g_is_conversion_ready;
+uint32_t adc_val[2], adc_buf[2];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -117,13 +118,12 @@ int main(void)
   /* USER CODE BEGIN 2 */
   StepmotorGPIOInit();
 
-  uint32_t adc_buf[2];
-  volatile uint16_t angle, previous_angle = 0; // 0 to 360 degree
+
+  volatile uint16_t angle, previous_angle ; // 0 to 360 degree
   volatile int16_t difference_angle;
   HAL_ADC_Start_DMA(&hadc1,adc_buf, 2);
-
-  StepmotorMoveAngleHalfStep(360,CW);
-  StepmotorMoveAngleHalfStep(360,CCW);
+  angle = (360*adc_val[0])/4095;
+  previous_angle = angle;
 
   /* USER CODE END 2 */
 
@@ -137,10 +137,9 @@ int main(void)
 	//startup test;
 
 
-
-	angle = (360*adc_buf[0])/4095;
-	difference_angle = angle - previous_angle;
-	printf("\r\n potvalue = %d, angle = %d, previous_angle = %d, difference_angle = %d",
+  angle = (360*adc_val[0])/4095;
+  difference_angle = angle - previous_angle;
+  printf("\r\n adc_value = %u, angle = %u, previous_angle = %u, difference_angle = %d",
 			adc_buf[0], angle, previous_angle, difference_angle);
   if(difference_angle > 0){
 	  StepmotorMoveAngleHalfStep(difference_angle,CW);
@@ -149,7 +148,8 @@ int main(void)
 	StepmotorMoveAngleHalfStep(-difference_angle, CCW);
   }
 	previous_angle = angle;
-	HAL_Delay(10);
+
+	//HAL_Delay(10);
   }
   /* USER CODE END 3 */
 }
