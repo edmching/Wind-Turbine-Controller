@@ -45,7 +45,6 @@
 #include "usart.h"
 #include "gpio.h"
 
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stdbool.h"
@@ -70,8 +69,8 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-//bool g_is_conversion_ready;
-uint32_t adc_val[2], adc_buf[2];
+volatile bool g_is_conversion_ready = false;
+volatile uint32_t g_adc_val[2], g_adc_buf[ADC_BUFFER_LENGTH];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -107,7 +106,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-  printf("Start");
+
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -117,13 +116,19 @@ int main(void)
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
   StepmotorGPIOInit();
-
+  printf("Start");
 
   volatile uint16_t angle, previous_angle; // 0 to 360 degree
   volatile int16_t difference_angle;
-  HAL_ADC_Start_DMA(&hadc1,adc_buf, 2);
-  angle = (360*adc_val[0])/4095;
+  HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &g_adc_buf, ADC_BUFFER_LENGTH);
+
+  //wait to get first sample
+  while(g_is_conversion_ready != true);
+  angle = (360*g_adc_val[0])/4095;
   previous_angle = angle;
+  printf("\r\n adc_value = %d, angle = %d, previous_angle = %d, difference_angle = %d",
+            g_adc_val[0], angle, previous_angle, difference_angle);
+  g_is_conversion_ready = false;
 
   /* USER CODE END 2 */
 
@@ -134,20 +139,22 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	//startup test;
+    if(g_is_conversion_ready == true){
+      angle = (360*g_adc_val[0])/4095;
+      difference_angle = angle - previous_angle;
+      printf("\r\n adc_value = %d, angle = %d, previous_angle = %d, difference_angle = %d",
+          g_adc_val[0], angle, previous_angle, difference_angle);
 
+      if(difference_angle > 0){
+        StepmotorMoveAngleHalfStep(difference_angle,CW);
+      }
+      else if (difference_angle < 0) {
+      StepmotorMoveAngleHalfStep(-difference_angle, CCW);
+      }
 
-  angle = (360*adc_val[0])/4095;
-  difference_angle = angle - previous_angle;
-  printf("\r\n adc_value = %u, angle = %u, previous_angle = %u, difference_angle = %d",
-			adc_buf[0], angle, previous_angle, difference_angle);
-  if(difference_angle > 0){
-	  StepmotorMoveAngleHalfStep(difference_angle,CW);
-  }
-  else if (difference_angle < 0) {
-	StepmotorMoveAngleHalfStep(-difference_angle, CCW);
-  }
-	previous_angle = angle;
+      previous_angle = angle;
+      g_is_conversion_ready = false;
+   }
 
   }
   /* USER CODE END 3 */

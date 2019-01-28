@@ -42,8 +42,8 @@
 
 /* USER CODE BEGIN 0 */
 #include "stdbool.h"
-//extern bool g_is_conversion_ready;
-extern uint32_t adc_val[2], adc_buf[2];
+extern volatile bool g_is_conversion_ready;
+volatile uint32_t g_adc_val[2], g_adc_buf[ADC_BUFFER_LENGTH];
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc1;
@@ -123,7 +123,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     hdma_adc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
     hdma_adc1.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
     hdma_adc1.Init.Mode = DMA_CIRCULAR;
-    hdma_adc1.Init.Priority = DMA_PRIORITY_LOW;
+    hdma_adc1.Init.Priority = DMA_PRIORITY_HIGH;
     hdma_adc1.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
     if (HAL_DMA_Init(&hdma_adc1) != HAL_OK)
     {
@@ -171,10 +171,12 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 /* USER CODE BEGIN 1 */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
-
-	for(int i = 0; i<NUM_OF_CONVERSIONS; ++i)
-		adc_val[i] = adc_buf[i];
-
+	uint32_t accumulator = 0;
+	uint32_t potent_arr_length = ADC_BUFFER_LENGTH/2;
+	for(int i = 0; i<potent_arr_length; ++i)
+		accumulator += g_adc_buf[2*i];
+    g_adc_val[0] = accumulator/potent_arr_length;
+	g_is_conversion_ready = true;
 }
 /* USER CODE END 1 */
 

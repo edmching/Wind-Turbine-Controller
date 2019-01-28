@@ -53,6 +53,8 @@
 #include <sys/time.h>
 #include <sys/times.h>
 #include "stm32f4xx.h"
+#include "usart.h"
+#include <string.h>
 
 
 
@@ -66,6 +68,8 @@ register char * stack_ptr asm("sp");
 
 char *__env[1] = { 0 };
 char **environ = __env;
+
+char g_uartdebugBuffer[256];
 
 
 /* Functions */
@@ -102,15 +106,16 @@ int _read (int file, char *ptr, int len)
 return len;
 }
 
-int _write(int file, char *ptr, int len)
-{
-	int DataIdx;
 
-	for (DataIdx = 0; DataIdx < len; DataIdx++)
-	{
-		ITM_SendChar((*ptr++));
-	}
-	return len;
+int _write(int file, char *ptr, int len) {
+  while (huart2.gState != HAL_UART_STATE_READY) {
+    //Kill time waiting for previous transfers
+    HAL_Delay(10);
+  }
+  memcpy(g_uartdebugBuffer, ptr, len);
+  HAL_UART_Transmit_DMA(&huart2, g_uartdebugBuffer, len);
+
+  return len;
 }
 
 caddr_t _sbrk(int incr)
