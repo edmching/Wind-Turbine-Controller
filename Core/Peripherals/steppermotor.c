@@ -47,7 +47,7 @@ void StepmotorGPIOInit(void)
 void StepmotorMoveAngleHalfStep(int angle, direction _direction)
 {
 	int numStepsAngle = angle/(float) (FULL_ROTATATION_IN_DEG/NUM_STEPS_360_DEG);
-	int RPM_delay_time = 2;
+	int RPM_delay_time = 1;
 	assert_param(numStepsAngle >= 0 && numStepsAngle <= 360);
 
 	for (int i = 0; i< numStepsAngle; ++i){

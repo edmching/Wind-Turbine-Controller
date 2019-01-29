@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * File Name          : ADC.h
+  * File Name          : TIM.h
   * Description        : This file provides code for the configuration
-  *                      of the ADC instances.
+  *                      of the TIM instances.
   ******************************************************************************
   ** This notice applies to any and all portions of this file
   * that are not between comment pairs USER CODE BEGIN and
@@ -37,8 +37,8 @@
   ******************************************************************************
   */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __adc_H
-#define __adc_H
+#ifndef __tim_H
+#define __tim_H
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -50,17 +50,16 @@
 
 /* USER CODE END Includes */
 
-extern ADC_HandleTypeDef hadc1;
+extern TIM_HandleTypeDef htim1;
 
 /* USER CODE BEGIN Private defines */
-#define NUM_OF_CONVERSIONS         2
-#define ADC_BUFFER_LENGTH		   8192
 
-extern volatile uint32_t adc_val[ADC_BUFFER_LENGTH], adc_buf[ADC_BUFFER_LENGTH];
 /* USER CODE END Private defines */
 
-void MX_ADC1_Init(void);
-
+void MX_TIM1_Init(void);
+                        
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+                    
 /* USER CODE BEGIN Prototypes */
 
 /* USER CODE END Prototypes */
@@ -68,7 +67,7 @@ void MX_ADC1_Init(void);
 #ifdef __cplusplus
 }
 #endif
-#endif /*__ adc_H */
+#endif /*__ tim_H */
 
 /**
   * @}
