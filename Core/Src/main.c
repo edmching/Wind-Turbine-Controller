@@ -118,7 +118,6 @@ int main(void)
   StepmotorGPIOInit();
   printf("Start");
 
-  uint32_t step_counter = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -128,7 +127,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    Stepmotor_Nonblocking_Move(360, CW, &step_counter);
+    Stepmotor_Nonblocking_HalfStep(360, CW);
 	//StepmotorMoveAngleHalfStep(360, CCW);
 	//HAL_Delay(1000);
 

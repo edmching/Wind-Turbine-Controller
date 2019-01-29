@@ -61,24 +61,25 @@ void StepmotorGPIOInit(void)
 	  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 }
 
-void Stepmotor_Nonblocking_Move(int angle, direction _direction, uint32_t* step_counter)
+void Stepmotor_Nonblocking_HalfStep(int angle, direction _direction)
 {
 	GPIO_TypeDef* GPIOx = STEPMOTOR_PORT_IN;
 	int numStepsAngle = angle/(float) (FULL_ROTATATION_IN_DEG/NUM_STEPS_360_DEG);
 	int RPM_delay_time = 1;
+	static uint32_t step_counter;
 	assert_param(numStepsAngle >= 0 && numStepsAngle <= 360);
 
-	if (*step_counter == numStepsAngle){
-		*step_counter = 0;
+	//resets step_counter when
+	if (step_counter == numStepsAngle){
+		step_counter = 0;
 		HAL_Delay(1000);
 	}
-	else if(*step_counter < numStepsAngle){
+	else if(step_counter < numStepsAngle){
 		if(_direction == CW){
 			for(int i = 0; i<8; ++i){
 				GPIOx->BSRR = half_step_sequence[i];
 				HAL_Delay(RPM_delay_time);
 			}
-
 		}
 		else if(_direction == CCW){
 			for(int i = 7; i>=0; --i){
@@ -86,8 +87,8 @@ void Stepmotor_Nonblocking_Move(int angle, direction _direction, uint32_t* step_
 				HAL_Delay(RPM_delay_time);
 			}
 		}
-		Stepmotor_IN_Reset();
-		*step_counter = *step_counter + 1;
+		GPIOx->BSRR = STEP_IN_RESET_ALL;
+		step_counter++;
 	}
 
 }

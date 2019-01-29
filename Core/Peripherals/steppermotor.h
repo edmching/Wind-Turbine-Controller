@@ -26,22 +26,24 @@
 #define NUM_STEPS_360_DEG			512
 #define FULL_ROTATATION_IN_DEG		360.0
 
-#define STEP_IN1_ON			STEPMOTOR_PIN_IN1 | \
-								 ((uint32_t)(STEPMOTOR_PIN_IN2|STEPMOTOR_PIN_IN3|STEPMOTOR_PIN_IN4) << 16U)
-#define STEP_IN2_ON			STEPMOTOR_PIN_IN2 | \
-								 ((uint32_t) (STEPMOTOR_PIN_IN1|STEPMOTOR_PIN_IN3|STEPMOTOR_PIN_IN4) << 16U)
-#define STEP_IN3_ON			STEPMOTOR_PIN_IN3 | \
-								 ((uint32_t) (STEPMOTOR_PIN_IN1|STEPMOTOR_PIN_IN2|STEPMOTOR_PIN_IN4) << 16U)
-#define STEP_IN4_ON			STEPMOTOR_PIN_IN4 |	\
-								 ((uint32_t) (STEPMOTOR_PIN_IN1|STEPMOTOR_PIN_IN2|STEPMOTOR_PIN_IN3) << 16U)
-#define STEP_IN1_N_IN2_ON  STEPMOTOR_PIN_IN1 | STEPMOTOR_PIN_IN2 | \
-								 ((uint32_t) (STEPMOTOR_PIN_IN3|STEPMOTOR_PIN_IN4) << 16U)
-#define STEP_IN2_N_IN3_ON  STEPMOTOR_PIN_IN2 | STEPMOTOR_PIN_IN3 | \
-								 ((uint32_t) (STEPMOTOR_PIN_IN1|STEPMOTOR_PIN_IN4) << 16U)
-#define STEP_IN3_N_IN4_ON  STEPMOTOR_PIN_IN3 | STEPMOTOR_PIN_IN4 | \
-								 ((uint32_t) (STEPMOTOR_PIN_IN1|STEPMOTOR_PIN_IN2) << 16U)
-#define STEP_IN4_N_IN1_ON  STEPMOTOR_PIN_IN4 | STEPMOTOR_PIN_IN1 | \
-								 ((uint32_t) (STEPMOTOR_PIN_IN2|STEPMOTOR_PIN_IN3) << 16U)
+#define STEP_IN1_ON					STEPMOTOR_PIN_IN1 | \
+								 	 	 ((uint32_t)(STEPMOTOR_PIN_IN2|STEPMOTOR_PIN_IN3|STEPMOTOR_PIN_IN4) << 16U)
+#define STEP_IN2_ON					STEPMOTOR_PIN_IN2 | \
+								 	 	 ((uint32_t) (STEPMOTOR_PIN_IN1|STEPMOTOR_PIN_IN3|STEPMOTOR_PIN_IN4) << 16U)
+#define STEP_IN3_ON					STEPMOTOR_PIN_IN3 | \
+								 	 	 ((uint32_t) (STEPMOTOR_PIN_IN1|STEPMOTOR_PIN_IN2|STEPMOTOR_PIN_IN4) << 16U)
+#define STEP_IN4_ON					STEPMOTOR_PIN_IN4 |	\
+								 	 	 ((uint32_t) (STEPMOTOR_PIN_IN1|STEPMOTOR_PIN_IN2|STEPMOTOR_PIN_IN3) << 16U)
+#define STEP_IN1_N_IN2_ON  			STEPMOTOR_PIN_IN1 | STEPMOTOR_PIN_IN2 | \
+								 	 	 ((uint32_t) (STEPMOTOR_PIN_IN3|STEPMOTOR_PIN_IN4) << 16U)
+#define STEP_IN2_N_IN3_ON  			STEPMOTOR_PIN_IN2 | STEPMOTOR_PIN_IN3 | \
+								 	 	 ((uint32_t) (STEPMOTOR_PIN_IN1|STEPMOTOR_PIN_IN4) << 16U)
+#define STEP_IN3_N_IN4_ON  			STEPMOTOR_PIN_IN3 | STEPMOTOR_PIN_IN4 | \
+								 	 	 ((uint32_t) (STEPMOTOR_PIN_IN1|STEPMOTOR_PIN_IN2) << 16U)
+#define STEP_IN4_N_IN1_ON  			STEPMOTOR_PIN_IN4 | STEPMOTOR_PIN_IN1 | \
+								 	 	 ((uint32_t) (STEPMOTOR_PIN_IN2|STEPMOTOR_PIN_IN3) << 16U)
+#define STEP_IN_RESET_ALL   		((uint32_t) (STEPMOTOR_PIN_IN1|STEPMOTOR_PIN_IN2| \
+								  	  	  STEPMOTOR_PIN_IN3|STEPMOTOR_PIN_IN4) << 16U)
 
 typedef enum {CW,CCW}direction;
 
@@ -53,6 +55,6 @@ void StepmotorHalfDriveCW (void);
 void StepmotorMoveAngle(int angle, direction _direction);
 void StepmotorMoveAngleHalfStep(int angle, direction _direction);
 void StepmotorMoveAngleFullDrive(int angle, direction _direction);
-void Stepmotor_Nonblocking_Move(int angle, direction _direction, uint32_t* step_counter);
+void Stepmotor_Nonblocking_HalfStep(int angle, direction _direction);
 
 #endif /* STEPPERMOTOR_H_ */
