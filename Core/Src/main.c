@@ -42,6 +42,7 @@
 #include "main.h"
 #include "adc.h"
 #include "dma.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -74,7 +75,7 @@ volatile uint32_t g_adc_val[2], g_adc_buf[ADC_BUFFER_LENGTH];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
-static void SystemClock_Config(void);
+void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 /* USER CODE END PFP */
 
@@ -114,10 +115,36 @@ int main(void)
   MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_ADC1_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
   StepmotorGPIOInit();
   printf("Start");
 
+<<<<<<< HEAD
+=======
+  volatile uint16_t angle, previous_angle, duty_cycle; // 0 to 360 degree
+  volatile int16_t difference_angle;
+  HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &g_adc_buf, ADC_BUFFER_LENGTH);
+
+  //wait to get first sample
+  __disable_irq();
+  int conversion_ready = g_is_conversion_ready;
+  __enable_irq();
+  while(conversion_ready != true){
+	  __disable_irq();
+	  conversion_ready = g_is_conversion_ready;
+	  __enable_irq();
+  }
+  angle = (360*g_adc_val[0])/4095;
+  previous_angle = angle;
+  printf("\r\n adc_value = %d, angle = %d, previous_angle = %d, difference_angle = %d",
+            g_adc_val[0], angle, previous_angle, difference_angle);
+  __disable_irq();
+  g_is_conversion_ready = false;
+  __enable_irq();
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  htim1.Instance->CCR1 = 50; //50% duty cycle
+>>>>>>> ADC_testing
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -125,13 +152,39 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+<<<<<<< HEAD
 
     /* USER CODE BEGIN 3 */
     Stepmotor_Nonblocking_HalfStep(360, CW);
 	//StepmotorMoveAngleHalfStep(360, CCW);
 	//HAL_Delay(1000);
+=======
+	__disable_irq();
+	conversion_ready = g_is_conversion_ready;
+	__enable_irq();
+	if(conversion_ready == true){
+	 duty_cycle=100*g_adc_val[1]/4095;
+    /* USER CODE BEGIN 3 */
+      angle = (360*g_adc_val[0])/4095;
+      difference_angle = angle - previous_angle;
+      printf("\r\n adc_value0 = %d, angle = %d, previous_angle = %d, difference_angle = %d, adc_value1 = %d, duty_cycle = %d",
+          g_adc_val[0], angle, previous_angle, difference_angle, g_adc_val[1], duty_cycle);
+      htim1.Instance->CCR1 = duty_cycle;
+      if(difference_angle > 0){
+        StepmotorMoveAngleHalfStep(difference_angle,CW);
+      }
+      else if (difference_angle < 0) {
+      StepmotorMoveAngleHalfStep(-difference_angle, CCW);
+      }
 
-  }
+      previous_angle = angle;
+      __disable_irq();
+      g_is_conversion_ready = false;
+      __enable_irq();
+	}
+   }
+>>>>>>> ADC_testing
+
   /* USER CODE END 3 */
 }
 
@@ -139,7 +192,7 @@ int main(void)
   * @brief System Clock Configuration
   * @retval None
   */
-static void SystemClock_Config(void)
+void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
