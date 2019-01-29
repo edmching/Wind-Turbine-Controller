@@ -176,7 +176,9 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 	for(int i = 0; i<potent_arr_length; ++i)
 		accumulator += g_adc_buf[2*i];
     g_adc_val[0] = accumulator/potent_arr_length;
+    __disable_irq();
 	g_is_conversion_ready = true;
+	__enable_irq();
 }
 /* USER CODE END 1 */
 

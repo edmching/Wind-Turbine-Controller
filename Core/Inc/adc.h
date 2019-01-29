@@ -54,7 +54,7 @@ extern ADC_HandleTypeDef hadc1;
 
 /* USER CODE BEGIN Private defines */
 #define NUM_OF_CONVERSIONS         2
-#define ADC_BUFFER_LENGTH			8192
+#define ADC_BUFFER_LENGTH		   4
 
 extern volatile uint32_t adc_val[ADC_BUFFER_LENGTH], adc_buf[ADC_BUFFER_LENGTH];
 /* USER CODE END Private defines */
