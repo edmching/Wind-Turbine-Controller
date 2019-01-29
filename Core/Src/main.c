@@ -118,26 +118,7 @@ int main(void)
   StepmotorGPIOInit();
   printf("Start");
 
-  volatile uint16_t angle, previous_angle; // 0 to 360 degree
-  volatile int16_t difference_angle;
-  HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &g_adc_buf, ADC_BUFFER_LENGTH);
-
-  //wait to get first sample
-  __disable_irq();
-  int conversion_ready = g_is_conversion_ready;
-  __enable_irq();
-  while(conversion_ready != true){
-	  __disable_irq();
-	  conversion_ready = g_is_conversion_ready;
-	  __enable_irq();
-  }
-  angle = (360*g_adc_val[0])/4095;
-  previous_angle = angle;
-  printf("\r\n adc_value = %d, angle = %d, previous_angle = %d, difference_angle = %d",
-            g_adc_val[0], angle, previous_angle, difference_angle);
-  __disable_irq();
-  g_is_conversion_ready = false;
-  __enable_irq();
+  uint32_t step_counter = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -147,27 +128,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	__disable_irq();
-	conversion_ready = g_is_conversion_ready;
-	__enable_irq();
-    if(conversion_ready == true){
-      angle = (360*g_adc_val[0])/4095;
-      difference_angle = angle - previous_angle;
-      printf("\r\n adc_value = %d, angle = %d, previous_angle = %d, difference_angle = %d",
-          g_adc_val[0], angle, previous_angle, difference_angle);
-
-      if(difference_angle > 0){
-        StepmotorMoveAngleHalfStep(difference_angle,CW);
-      }
-      else if (difference_angle < 0) {
-      StepmotorMoveAngleHalfStep(-difference_angle, CCW);
-      }
-
-      previous_angle = angle;
-      __disable_irq();
-      g_is_conversion_ready = false;
-      __enable_irq();
-   }
+    Stepmotor_Nonblocking_Move(360, CW, &step_counter);
+	//StepmotorMoveAngleHalfStep(360, CCW);
+	//HAL_Delay(1000);
 
   }
   /* USER CODE END 3 */
