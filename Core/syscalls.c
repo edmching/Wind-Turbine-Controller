@@ -113,7 +113,7 @@ int _write(int file, char *ptr, int len) {
     HAL_Delay(10);
   }
   memcpy(g_uartdebugBuffer, ptr, len);
-  HAL_UART_Transmit_DMA(&huart2, g_uartdebugBuffer, len);
+  HAL_UART_Transmit_DMA(&huart2, (uint8_t *) &g_uartdebugBuffer, len);
 
   return len;
 }

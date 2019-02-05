@@ -72,7 +72,6 @@ void Stepmotor_Nonblocking_HalfStep(int angle, direction _direction)
 	//resets step_counter when
 	if (step_counter == numStepsAngle){
 		step_counter = 0;
-		HAL_Delay(1000);
 	}
 	else if(step_counter < numStepsAngle){
 		if(_direction == CW){
@@ -95,47 +94,27 @@ void Stepmotor_Nonblocking_HalfStep(int angle, direction _direction)
 
 void StepmotorMoveAngleHalfStep(int angle, direction _direction)
 {
+
 	int numStepsAngle = angle/(float) (FULL_ROTATATION_IN_DEG/NUM_STEPS_360_DEG);
 	int RPM_delay_time = 1;
+	GPIO_TypeDef* GPIOx = STEPMOTOR_PORT_IN;
 	assert_param(numStepsAngle >= 0 && numStepsAngle <= 360);
 
 	for (int i = 0; i< numStepsAngle; ++i){
 		if(_direction == CW){
-			Stepmotor_IN1_ON();
-			HAL_Delay(RPM_delay_time);
-			Stepmotor_IN1_N_IN2_ON();
-			HAL_Delay(RPM_delay_time);
-			Stepmotor_IN2_ON();
-			HAL_Delay(RPM_delay_time);
-			Stepmotor_IN2_N_IN3_ON();
-			HAL_Delay(RPM_delay_time);
-			Stepmotor_IN3_ON();
-			HAL_Delay(RPM_delay_time);
-			Stepmotor_IN3_N_IN4_ON();
-			HAL_Delay(RPM_delay_time);
-			Stepmotor_IN4_ON();
-			HAL_Delay(RPM_delay_time);
-			Stepmotor_IN4_N_IN1_ON();
+			for(int j = 0; j<8; ++j){
+				GPIOx->BSRR = half_step_sequence[j];
+				HAL_Delay(RPM_delay_time);
+			}
 		}
 		else if(_direction == CCW){
-			Stepmotor_IN4_N_IN1_ON();
-			HAL_Delay(RPM_delay_time);
-			Stepmotor_IN4_ON();
-			HAL_Delay(RPM_delay_time);
-			Stepmotor_IN3_N_IN4_ON();
-			HAL_Delay(RPM_delay_time);
-			Stepmotor_IN3_ON();
-			HAL_Delay(RPM_delay_time);
-			Stepmotor_IN2_N_IN3_ON();
-			HAL_Delay(RPM_delay_time);
-			Stepmotor_IN2_ON();
-			HAL_Delay(RPM_delay_time);
-			Stepmotor_IN1_N_IN2_ON();
-			HAL_Delay(RPM_delay_time);
-			Stepmotor_IN1_ON();
+			for(int j = 7; j>=0; --j){
+				GPIOx->BSRR = half_step_sequence[j];
+				HAL_Delay(RPM_delay_time);
+			}
 		}
 	  }
-	Stepmotor_IN_Reset();
+	GPIOx->BSRR = STEP_IN_RESET_ALL;
 }
 
 void StepmotorMoveAngleFullDrive(int angle, direction _direction)

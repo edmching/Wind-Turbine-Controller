@@ -120,10 +120,9 @@ int main(void)
   StepmotorGPIOInit();
   printf("Start");
 
-<<<<<<< HEAD
-=======
   volatile uint16_t angle, previous_angle, duty_cycle; // 0 to 360 degree
-  volatile int16_t difference_angle;
+  volatile int16_t diff_angle = 0;
+
   HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &g_adc_buf, ADC_BUFFER_LENGTH);
 
   //wait to get first sample
@@ -138,13 +137,12 @@ int main(void)
   angle = (360*g_adc_val[0])/4095;
   previous_angle = angle;
   printf("\r\n adc_value = %d, angle = %d, previous_angle = %d, difference_angle = %d",
-            g_adc_val[0], angle, previous_angle, difference_angle);
+            g_adc_val[0], angle, previous_angle, diff_angle);
   __disable_irq();
   g_is_conversion_ready = false;
   __enable_irq();
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
   htim1.Instance->CCR1 = 50; //50% duty cycle
->>>>>>> ADC_testing
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -152,39 +150,42 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-<<<<<<< HEAD
 
     /* USER CODE BEGIN 3 */
-    Stepmotor_Nonblocking_HalfStep(360, CW);
-	//StepmotorMoveAngleHalfStep(360, CCW);
-	//HAL_Delay(1000);
-=======
-	__disable_irq();
-	conversion_ready = g_is_conversion_ready;
-	__enable_irq();
-	if(conversion_ready == true){
-	 duty_cycle=100*g_adc_val[1]/4095;
-    /* USER CODE BEGIN 3 */
-      angle = (360*g_adc_val[0])/4095;
-      difference_angle = angle - previous_angle;
-      printf("\r\n adc_value0 = %d, angle = %d, previous_angle = %d, difference_angle = %d, adc_value1 = %d, duty_cycle = %d",
-          g_adc_val[0], angle, previous_angle, difference_angle, g_adc_val[1], duty_cycle);
-      htim1.Instance->CCR1 = duty_cycle;
-      if(difference_angle > 0){
-        StepmotorMoveAngleHalfStep(difference_angle,CW);
-      }
-      else if (difference_angle < 0) {
-      StepmotorMoveAngleHalfStep(-difference_angle, CCW);
-      }
+	  
+    __disable_irq();
+    conversion_ready = g_is_conversion_ready;
+    __enable_irq();
+    if(conversion_ready == true)
+    {
+    
+	    duty_cycle=100*g_adc_val[1]/4095;
+        angle = (360*g_adc_val[0])/4095;
+		diff_angle = angle - previous_angle;
 
+		printf("\r\n adc_value0 = %d, angle = %d, previous_angle = %d, difference_angle = %d, adc_value1 = %d, duty_cycle = %d",
+			g_adc_val[0], angle, previous_angle, diff_angle, g_adc_val[1], duty_cycle);
+
+      	  htim1.Instance->CCR1 = duty_cycle;
+
+
+
+		 if(diff_angle > 0){
+			 StepmotorMoveAngleHalfStep(diff_angle,CW);
+		 }
+		 else if (diff_angle < 0) {
+			 StepmotorMoveAngleHalfStep(-diff_angle, CCW);
+     }
+
+   
       previous_angle = angle;
+      
       __disable_irq();
       g_is_conversion_ready = false;
       __enable_irq();
-	}
-   }
->>>>>>> ADC_testing
+    }
 
+   }
   /* USER CODE END 3 */
 }
 
