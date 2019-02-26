@@ -45,16 +45,31 @@
 #define STEP_IN_RESET_ALL   		((uint32_t) (STEPMOTOR_PIN_IN1|STEPMOTOR_PIN_IN2| \
 								  	  	  STEPMOTOR_PIN_IN3|STEPMOTOR_PIN_IN4) << 16U)
 
-typedef enum {CW,CCW}direction;
+typedef enum {
+	CW  = 0,
+	CCW = 1
+}direction;
 
-void StepmotorGPIOInit(void);
-void StepmotorWaveDriveCW (void);
-void StepmotorWaveDriveCCW (void);
-void StepmotorFullDriveCW (void);
-void StepmotorHalfDriveCW (void);
-void StepmotorMoveAngle(int angle, direction _direction);
+typedef enum {
+	MOTOR_IS_RUNNING = 0,
+	MOTOR_IS_STOPPED = 1
+}stepmotor_state;
+
+typedef struct{
+	int32_t 			current_position; //CW is positive and CCW is negative
+	int32_t 			reference_position;
+	direction 			_direction;
+	uint32_t 			speed; //in miliseconds; measured in steps per seconds
+	stepmotor_state 	state;
+	uint32_t			steps_to_move;
+}Stepmotor_Status;
+
+void StepmotorGPIOInit(Stepmotor_Status* motor_status);
+stepmotor_state Stepmotor_run_halfstep(Stepmotor_Status* motor_status);
+void Stepmotor_set_direction(Stepmotor_Status* motor_status, direction _direction);
+void Stepmotor_set_reference_position(Stepmotor_Status* motor_status);
+void Stepmotor_set_goal_position(Stepmotor_Status* motor_status, int32_t _steps_to_move);
+
+
 void StepmotorMoveAngleHalfStep(int angle, direction _direction);
-void StepmotorMoveAngleFullDrive(int angle, direction _direction);
-void Stepmotor_Nonblocking_HalfStep(int angle, direction _direction);
-
 #endif /* STEPPERMOTOR_H_ */

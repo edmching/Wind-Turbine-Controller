@@ -89,7 +89,11 @@ void Error_Handler(void);
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
-
+typedef enum{
+	READ_SENSORS 			 = 0,
+	RUN_MOTORS	  			 = 1,
+	ADJUST_DUTY_CYCLE 		 = 2
+}wind_turbine_states;
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

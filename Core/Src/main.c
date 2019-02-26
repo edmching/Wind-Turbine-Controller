@@ -72,6 +72,7 @@
 /* USER CODE BEGIN PV */
 volatile bool g_is_conversion_ready = false;
 volatile uint32_t g_adc_val[2], g_adc_buf[ADC_BUFFER_LENGTH];
+Stepmotor_Status motor_status;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -117,15 +118,19 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-  StepmotorGPIOInit();
+  StepmotorGPIOInit(&motor_status);
+  stepmotor_state motor_state = MOTOR_IS_STOPPED;
+
   printf("Start");
 
   volatile uint16_t angle, previous_angle, duty_cycle; // 0 to 360 degree
   volatile int16_t diff_angle = 0;
+ 
 
   HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &g_adc_buf, ADC_BUFFER_LENGTH);
 
   //wait to get first sample
+  //TODO: implement better critical section
   __disable_irq();
   int conversion_ready = g_is_conversion_ready;
   __enable_irq();
@@ -141,53 +146,61 @@ int main(void)
   __disable_irq();
   g_is_conversion_ready = false;
   __enable_irq();
+
+
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
   htim1.Instance->CCR1 = 50; //50% duty cycle
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  volatile int32_t steps_to_move = 0;
+
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  
+
     __disable_irq();
     conversion_ready = g_is_conversion_ready;
     __enable_irq();
     if(conversion_ready == true)
     {
-    
 	    duty_cycle=100*g_adc_val[1]/4095;
-        angle = (360*g_adc_val[0])/4095;
-		diff_angle = angle - previous_angle;
+      angle = (360*g_adc_val[0])/4095;
+      diff_angle = angle - previous_angle;
 
-		printf("\r\n adc_value0 = %d, angle = %d, previous_angle = %d, difference_angle = %d, adc_value1 = %d, duty_cycle = %d",
+      printf("\r\n adc_value0 = %d, angle = %d, previous_angle = %d, difference_angle = %d, adc_value1 = %d, duty_cycle = %d",
 			g_adc_val[0], angle, previous_angle, diff_angle, g_adc_val[1], duty_cycle);
 
-      	  htim1.Instance->CCR1 = duty_cycle;
+      htim1.Instance->CCR1 = duty_cycle;
 
-
-
-		 if(diff_angle > 0){
-			 StepmotorMoveAngleHalfStep(diff_angle,CW);
-		 }
-		 else if (diff_angle < 0) {
-			 StepmotorMoveAngleHalfStep(-diff_angle, CCW);
-     }
-
-   
-      previous_angle = angle;
-      
+      //update new position
+      //TODO: test updated stepmotor drivers
+      if(motor_state == MOTOR_IS_STOPPED)
+      {
+        if(diff_angle > 0){
+          steps_to_move = diff_angle/(float) (FULL_ROTATATION_IN_DEG/NUM_STEPS_360_DEG);
+          Stepmotor_set_goal_position(&motor_status, steps_to_move);
+        }
+        else if(diff_angle < 0){
+          steps_to_move = diff_angle/(float) (FULL_ROTATATION_IN_DEG/NUM_STEPS_360_DEG);
+          Stepmotor_set_goal_position(&motor_status, steps_to_move);
+        }
+        previous_angle = angle;
+      }
+    
+      motor_state =  Stepmotor_run_halfstep(&motor_status);
       __disable_irq();
       g_is_conversion_ready = false;
       __enable_irq();
     }
-
    }
   /* USER CODE END 3 */
 }
+
+
 
 /**
   * @brief System Clock Configuration
