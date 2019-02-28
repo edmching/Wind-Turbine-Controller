@@ -149,7 +149,7 @@ int main(void)
 
 
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-  htim1.Instance->CCR1 = 50; //50% duty cycle
+  htim1.Instance->CCR1 = 168/2; //50% duty cycle
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -167,12 +167,12 @@ int main(void)
     __enable_irq();
     if(conversion_ready == true)
     {
-	    duty_cycle=100*g_adc_val[1]/4095;
-      angle = (360*g_adc_val[0])/4095;
+	    duty_cycle=168*g_adc_val[1]/4093;
+      angle = (360*g_adc_val[0])/4093;
       diff_angle = angle - previous_angle;
 
       printf("\r\n adc_value0 = %d, angle = %d, previous_angle = %d, difference_angle = %d, adc_value1 = %d, duty_cycle = %d",
-			g_adc_val[0], angle, previous_angle, diff_angle, g_adc_val[1], duty_cycle);
+			g_adc_val[0], angle, previous_angle, diff_angle, g_adc_val[1], duty_cycle*100/168);
 
       htim1.Instance->CCR1 = duty_cycle;
 

@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "board.h": "c",
+        "steppermotor.h": "c",
+        "stat.h": "c",
+        "stdlib.h": "c",
+        "time.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
+}
