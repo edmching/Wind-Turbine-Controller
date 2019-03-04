@@ -150,14 +150,16 @@ int main(void)
 	}
 
 	//calculate initial values
+	//probably a good idea to initialize everything
 	voltage[0] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
 	current[0] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
 	previous_angle = map_values(g_adc_val[2], 0, ADC_12B_MAX_RESOLUTION, 0, 360);
+    angle = map_values(g_adc_val[2], 0, ADC_12B_MAX_RESOLUTION, 0, 360);
 	power[0] = voltage[0]*current[0];
 
-	printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d\n", g_adc_val[0], voltage[1], voltage[0]);
-	printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d\n", g_adc_val[1], current[1], current[0]);
-	printf("\r\n adc_value2 = %d, previous_angle= %d\n", g_adc_val[2], previous_angle);
+	//printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d\n", g_adc_val[0], voltage[1], voltage[0]);
+	//printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d\n", g_adc_val[1], current[1], current[0]);
+	//printf("\r\n adc_value2 = %d, previous_angle= %d\n", g_adc_val[2], previous_angle);
 
 	__disable_irq();
 	g_is_conversion_ready = false;
@@ -166,18 +168,20 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
- 
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	/*check if converison is finished*/
     __disable_irq();
     conversion_ready = g_is_conversion_ready;
     __enable_irq();
     if(conversion_ready == true)
     {
-
+		__disable_irq();
+		g_is_conversion_ready = false;
+		__enable_irq();
       /*read mppt sens data*/
       voltage[1] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
       current[1] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
@@ -189,41 +193,40 @@ int main(void)
 
       //printf("\r\n adc_value2 = %d, angle = %d, previous_angle = %d, difference_angle = %d \n", g_adc_val[2], angle, previous_angle, diff_angle);
 
-      //updates new position
-      if(motor_state == MOTOR_IS_STOPPED)
-      {
-        if(diff_angle > 0){
-          steps_to_move = diff_angle/(float) (FULL_ROTATATION_IN_DEG/NUM_STEPS_360_DEG);
-          Stepmotor_set_goal_position(&motor_status, steps_to_move);
-        }
-        else if(diff_angle < 0){
-          steps_to_move = diff_angle/(float) (FULL_ROTATATION_IN_DEG/NUM_STEPS_360_DEG);
-          Stepmotor_set_goal_position(&motor_status, steps_to_move);
-        }
-        previous_angle = angle;
-      }
-    
-      motor_state =  Stepmotor_run_halfstep(&motor_status);
-
      // printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d\n", g_adc_val[0], voltage[1], voltage[0]);
      // printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d\n", g_adc_val[1], current[1], current[0]);
 
       duty_cycle = Perturb_N_Observe(power, voltage, duty_cycle);
 
       htim1.Instance->CCR1 = duty_cycle;
-     // printf("\r\n power[1] = %d, power[0] = %d, duty_cycle = %d \n", power[1], power[0], duty_cycle*100/168);
 
       //updates the previous values
       voltage[0] = voltage[1];
       current[0] = current[1];
       power[0] = power[1];
 
-      __disable_irq();
-      g_is_conversion_ready = false;
-      __enable_irq();
+
     }
 
+    /*do other stuff while waiting for conversion */
+    //updates new position
+    if(motor_state == MOTOR_IS_STOPPED)
+    {
+      if(diff_angle > 0){
+        steps_to_move = diff_angle/(float) (FULL_ROTATATION_IN_DEG/NUM_STEPS_360_DEG);
+        Stepmotor_set_goal_position(&motor_status, steps_to_move);
+      }
+      else if(diff_angle < 0){
+        steps_to_move = diff_angle/(float) (FULL_ROTATATION_IN_DEG/NUM_STEPS_360_DEG);
+        Stepmotor_set_goal_position(&motor_status, steps_to_move);
+      }
+      previous_angle = angle;
+    }
+
+    motor_state =  Stepmotor_run_halfstep(&motor_status);
+
   }
+
   /* USER CODE END 3 */
 }
 
