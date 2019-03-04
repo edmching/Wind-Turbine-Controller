@@ -125,7 +125,11 @@ int main(void)
   uint16_t voltage[2], current[2];
   uint32_t power[2];
   uint8_t duty_cycle;
-  int conversion_ready;
+  bool conversion_ready;
+  uint8_t angle, previous_angle;
+  int8_t diff_angle;
+  stepmotor_state motor_state = MOTOR_IS_STOPPED;
+  uint16_t steps_to_move;
  
   HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &g_adc_buf, ADC_BUFFER_LENGTH);
 
@@ -134,7 +138,6 @@ int main(void)
   htim1.Instance->CCR1 = duty_cycle;
 
 	//wait to get first sample
-	//TODO: implement better critical section
 	__disable_irq();
 	conversion_ready = g_is_conversion_ready;
 	__enable_irq();
@@ -148,10 +151,12 @@ int main(void)
 	//calculate initial values
 	voltage[0] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
 	current[0] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
+    previous_angle = map_values(g_adc_val[2], 0, ADC_12B_MAX_RESOLUTION, 0, 360);
 	power[0] = voltage[0]*current[0];
 
 	printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d\n", g_adc_val[0], voltage[1], voltage[0]);
 	printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d\n", g_adc_val[1], current[1], current[0]);
+    printf("\r\n adc_value2 = %d, previous_angle= %d\n", g_adc_val[2], previous_angle);
 
 	__disable_irq();
 	g_is_conversion_ready = false;
@@ -166,28 +171,30 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	__disable_irq();
-	int conversion_ready = g_is_conversion_ready;
-	__enable_irq();
-	if(conversion_ready == true)
-	{
-	  voltage[1] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
-	  current[1] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
-	  power[1] = voltage[1]*current[1];
-
     __disable_irq();
-    conversion_ready = g_is_conversion_ready;
+    int conversion_ready = g_is_conversion_ready;
     __enable_irq();
     if(conversion_ready == true)
     {
-	    duty_cycle=168*g_adc_val[1]/4093;
-      angle = (360*g_adc_val[0])/4093;
+      /*read mppt sens data*/
+      voltage[1] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
+      current[1] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
+      power[1] = voltage[1]*current[1];
+
+      /* read wind vane data */
+      angle = map_values(g_adc_val[2], 0, ADC_12B_MAX_RESOLUTION, 0, 360);
       diff_angle = angle - previous_angle;
 
-      printf("\r\n adc_value0 = %d, angle = %d, previous_angle = %d, difference_angle = %d, adc_value1 = %d, duty_cycle = %d",
-			g_adc_val[0], angle, previous_angle, diff_angle, g_adc_val[1], duty_cycle*100/168);
+      printf("\r\n adc_value0 = %d, angle = %d, previous_angle = %d, difference_angle = %d \n",
+      g_adc_val[2], angle, previous_angle, diff_angle);
+
+      printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d\n", g_adc_val[0], voltage[1], voltage[0]);
+      printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d\n", g_adc_val[1], current[1], current[0]);
+
+      duty_cycle = Perturb_N_Observe(power, voltage, current, duty_cycle);
 
       htim1.Instance->CCR1 = duty_cycle;
+      printf("\r\n power[1] = %d, power[0] = %d, duty_cycle = %d \n", power[1], power[0], duty_cycle*100/168);
 
       //update new position
       //TODO: test updated stepmotor drivers
@@ -205,32 +212,20 @@ int main(void)
       }
     
       motor_state =  Stepmotor_run_halfstep(&motor_status);
+
+      //updates the previous values
+      voltage[0] = voltage[1];
+      current[0] = current[1];
+      power[0] = power[1];
+
       __disable_irq();
       g_is_conversion_ready = false;
       __enable_irq();
     }
-	  printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d\n", g_adc_val[0], voltage[1], voltage[0]);
-	  printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d\n", g_adc_val[1], current[1], current[0]);
-
-	  duty_cycle = Perturb_N_Observe(power, voltage, current, duty_cycle);
-
-	  htim1.Instance->CCR1 = duty_cycle;
-	  printf("\r\n power[1] = %d, power[0] = %d, duty_cycle = %d \n", power[1], power[0], duty_cycle*100/168);
-
-	  //updates the previous values
-	  voltage[0] = voltage[1];
-	  current[0] = current[1];
-	  power[0] = power[1];
-
-	  __disable_irq();
-	  g_is_conversion_ready = false;
-	  __enable_irq();
-	}
-	HAL_Delay(1000);
-   }
+    //HAL_Delay(500);
+  }
   /* USER CODE END 3 */
 }
-
 
 /**
   * @brief System Clock Configuration
@@ -241,11 +236,11 @@ void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /**Configure the main internal regulator output voltage
+  /**Configure the main internal regulator output voltage 
   */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
-  /**Initializes the CPU, AHB and APB busses clocks
+  /**Initializes the CPU, AHB and APB busses clocks 
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
@@ -260,7 +255,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  /**Initializes the CPU, AHB and APB busses clocks
+  /**Initializes the CPU, AHB and APB busses clocks 
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
@@ -320,11 +315,11 @@ uint8_t Perturb_N_Observe(uint32_t power[], uint16_t voltage[], uint16_t current
 float map_values(int32_t val, int32_t input_min, int32_t input_max, int32_t output_min, int32_t output_max)
 {
 	float slope = 1.0 * (output_max - output_min)/(input_max-input_min);
-	return (val - input_min)*(slope) + output_min; // 0.5 is for rounding
+	return (val - input_min)*(slope) + output_min;
 }
-/* USER CODE END 4  */
+/* USER CODE END 4 */
 
-/*
+/**
   * @brief  This function is executed in case of error occurrence.
   * @retval None
   */

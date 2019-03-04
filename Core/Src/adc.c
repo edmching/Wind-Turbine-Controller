@@ -63,7 +63,7 @@ void MX_ADC1_Init(void)
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 2;
+  hadc1.Init.NbrOfConversion = 3;
   hadc1.Init.DMAContinuousRequests = ENABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
@@ -87,7 +87,14 @@ void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
-
+  /**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
+  */
+  sConfig.Channel = ADC_CHANNEL_4;
+  sConfig.Rank = 3;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
 }
 
@@ -106,9 +113,10 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     __HAL_RCC_GPIOA_CLK_ENABLE();
     /**ADC1 GPIO Configuration    
     PA0-WKUP     ------> ADC1_IN0
-    PA1     ------> ADC1_IN1 
+    PA1     ------> ADC1_IN1
+    PA4     ------> ADC1_IN4 
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
+    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_4;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -154,9 +162,10 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
   
     /**ADC1 GPIO Configuration    
     PA0-WKUP     ------> ADC1_IN0
-    PA1     ------> ADC1_IN1 
+    PA1     ------> ADC1_IN1
+    PA4     ------> ADC1_IN4 
     */
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_0|GPIO_PIN_1);
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_4);
 
     /* ADC1 DMA DeInit */
     HAL_DMA_DeInit(adcHandle->DMA_Handle);
@@ -172,17 +181,21 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 /* USER CODE BEGIN 1 */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
-
 	uint32_t accumulator0 = 0;
 	uint32_t accumulator1 = 0;
-	uint32_t potent_arr_length = ADC_BUFFER_LENGTH/2;
+    uint32_t accumulator2 = 0;
+	uint32_t potent_arr_length = ADC_BUFFER_LENGTH/3;
+
 	for(int i = 0; i<potent_arr_length; ++i){
-		accumulator0 += g_adc_buf[2*i]; //evens
-		accumulator1 += g_adc_buf[2*i+1]; //odds
+		accumulator0 += g_adc_buf[3*i]; //firsts
+		accumulator1 += g_adc_buf[3*i + 1]; //seconds
+		accumulator2 += g_adc_buf[3*i + 2];
 	}
     g_adc_val[0] = accumulator0/potent_arr_length;
     g_adc_val[1] = accumulator1/potent_arr_length;
-    __disable_irq();
+    g_adc_val[2] = accumulator2/potent_arr_length;
+
+   __disable_irq();
 	g_is_conversion_ready = true;
 	__enable_irq();
 }
