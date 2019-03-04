@@ -71,13 +71,15 @@
 
 /* USER CODE BEGIN PV */
 volatile bool g_is_conversion_ready = false;
-volatile uint32_t g_adc_val[2], g_adc_buf[ADC_BUFFER_LENGTH];
+volatile uint32_t g_adc_val[NUM_OF_CONVERSIONS], g_adc_buf[ADC_BUFFER_LENGTH];
 Stepmotor_Status motor_status;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+uint8_t Perturb_N_Observe(uint32_t power[], uint16_t voltage[], uint16_t current[], uint8_t duty_cycle);
+float map_values(int32_t val, int32_t input_min, int32_t input_max, int32_t output_min, int32_t output_max);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -118,49 +120,60 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-  StepmotorGPIOInit(&motor_status);
-  stepmotor_state motor_state = MOTOR_IS_STOPPED;
-
-  printf("Start");
-
-  volatile uint16_t angle, previous_angle, duty_cycle; // 0 to 360 degree
-  volatile int16_t diff_angle = 0;
  
-
+  /* assume v > 0, i > 0  */
+  uint16_t voltage[2], current[2];
+  uint32_t power[2];
+  uint8_t duty_cycle;
+  int conversion_ready;
+ 
   HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &g_adc_buf, ADC_BUFFER_LENGTH);
 
-  //wait to get first sample
-  //TODO: implement better critical section
-  __disable_irq();
-  int conversion_ready = g_is_conversion_ready;
-  __enable_irq();
-  while(conversion_ready != true){
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  duty_cycle = 50*168/100; //50% duty cycle
+  htim1.Instance->CCR1 = duty_cycle;
+
+	//wait to get first sample
+	//TODO: implement better critical section
+	__disable_irq();
+	conversion_ready = g_is_conversion_ready;
+	__enable_irq();
+	while(conversion_ready != true){
 	  __disable_irq();
 	  conversion_ready = g_is_conversion_ready;
 	  __enable_irq();
-  }
-  angle = (360*g_adc_val[0])/4095;
-  previous_angle = angle;
-  printf("\r\n adc_value = %d, angle = %d, previous_angle = %d, difference_angle = %d",
-            g_adc_val[0], angle, previous_angle, diff_angle);
-  __disable_irq();
-  g_is_conversion_ready = false;
-  __enable_irq();
 
+	}
 
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-  htim1.Instance->CCR1 = 168/2; //50% duty cycle
+	//calculate initial values
+	voltage[0] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
+	current[0] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
+	power[0] = voltage[0]*current[0];
+
+	printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d\n", g_adc_val[0], voltage[1], voltage[0]);
+	printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d\n", g_adc_val[1], current[1], current[0]);
+
+	__disable_irq();
+	g_is_conversion_ready = false;
+	__enable_irq();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  volatile int32_t steps_to_move = 0;
-
+ 
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	__disable_irq();
+	int conversion_ready = g_is_conversion_ready;
+	__enable_irq();
+	if(conversion_ready == true)
+	{
+	  voltage[1] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
+	  current[1] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
+	  power[1] = voltage[1]*current[1];
 
     __disable_irq();
     conversion_ready = g_is_conversion_ready;
@@ -196,10 +209,27 @@ int main(void)
       g_is_conversion_ready = false;
       __enable_irq();
     }
+	  printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d\n", g_adc_val[0], voltage[1], voltage[0]);
+	  printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d\n", g_adc_val[1], current[1], current[0]);
+
+	  duty_cycle = Perturb_N_Observe(power, voltage, current, duty_cycle);
+
+	  htim1.Instance->CCR1 = duty_cycle;
+	  printf("\r\n power[1] = %d, power[0] = %d, duty_cycle = %d \n", power[1], power[0], duty_cycle*100/168);
+
+	  //updates the previous values
+	  voltage[0] = voltage[1];
+	  current[0] = current[1];
+	  power[0] = power[1];
+
+	  __disable_irq();
+	  g_is_conversion_ready = false;
+	  __enable_irq();
+	}
+	HAL_Delay(1000);
    }
   /* USER CODE END 3 */
 }
-
 
 
 /**
@@ -211,11 +241,11 @@ void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /**Configure the main internal regulator output voltage 
+  /**Configure the main internal regulator output voltage
   */
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
-  /**Initializes the CPU, AHB and APB busses clocks 
+  /**Initializes the CPU, AHB and APB busses clocks
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
@@ -230,7 +260,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  /**Initializes the CPU, AHB and APB busses clocks 
+  /**Initializes the CPU, AHB and APB busses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
@@ -247,9 +277,54 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-/* USER CODE END 4 */
+uint8_t Perturb_N_Observe(uint32_t power[], uint16_t voltage[], uint16_t current[], uint8_t duty_cycle) //might need to change to signed because voltage
+{
+  int32_t delta_power = power[1] - power[0];
+  int32_t delta_voltage = voltage[1] - voltage[0];
+  uint8_t new_duty_cycle = duty_cycle;
+  const int duty_cycle_step = 1;
 
-/**
+  printf("\r\n delta_power = %d, delta_voltage = %d \n", delta_power, delta_voltage);
+
+  /*
+   * if dp/dv > 0, increase duty cycle
+   * if dp/dv < 0, decrease duty cycle
+   */
+  if(delta_power > 0){
+    if(delta_voltage > 0){
+    	if(new_duty_cycle < 168){
+    		new_duty_cycle += duty_cycle_step;
+    	}
+    }
+    else if(delta_voltage < 0){
+    	if(new_duty_cycle > 0)
+    		new_duty_cycle -= duty_cycle_step;
+    }
+  }
+  else if (delta_power < 0){
+    if(delta_voltage > 0){
+    	if(new_duty_cycle > 0){
+    		new_duty_cycle-= duty_cycle_step;
+    	}
+    }
+    else if(delta_voltage < 0){
+    	if(new_duty_cycle < 168){
+    		new_duty_cycle += duty_cycle_step;
+    	}
+    }
+  }
+
+  return new_duty_cycle;
+}
+
+float map_values(int32_t val, int32_t input_min, int32_t input_max, int32_t output_min, int32_t output_max)
+{
+	float slope = 1.0 * (output_max - output_min)/(input_max-input_min);
+	return (val - input_min)*(slope) + output_min; // 0.5 is for rounding
+}
+/* USER CODE END 4  */
+
+/*
   * @brief  This function is executed in case of error occurrence.
   * @retval None
   */

@@ -47,16 +47,17 @@
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "stdbool.h"
 /* USER CODE END Includes */
 
 extern ADC_HandleTypeDef hadc1;
 
 /* USER CODE BEGIN Private defines */
 #define NUM_OF_CONVERSIONS         2
-#define ADC_BUFFER_LENGTH		       400
+#define ADC_BUFFER_LENGTH		   400
 
-extern volatile uint32_t adc_val[ADC_BUFFER_LENGTH], adc_buf[ADC_BUFFER_LENGTH];
+extern volatile bool g_is_conversion_ready;
+extern volatile uint32_t g_adc_val[NUM_OF_CONVERSIONS], g_adc_buf[ADC_BUFFER_LENGTH];
 /* USER CODE END Private defines */
 
 void MX_ADC1_Init(void);
