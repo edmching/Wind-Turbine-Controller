@@ -93,7 +93,10 @@ typedef enum{
 	READ_SENSORS 			 = 0,
 	RUN_MOTORS	  			 = 1,
 	ADJUST_DUTY_CYCLE 		 = 2
-}wind_turbine_states;
+}typedefstates;
+
+#define SENSOR_RESOLUTION 100
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
