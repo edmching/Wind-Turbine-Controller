@@ -32,6 +32,4 @@ void BoardInit(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD2_GPIO_PORT, &GPIO_InitStruct);
 
-
-
 }

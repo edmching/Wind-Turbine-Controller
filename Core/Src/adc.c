@@ -41,9 +41,7 @@
 #include "adc.h"
 
 /* USER CODE BEGIN 0 */
-#include "stdbool.h"
-extern volatile bool g_is_conversion_ready;
-volatile uint32_t g_adc_val[2], g_adc_buf[ADC_BUFFER_LENGTH];
+
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc1;

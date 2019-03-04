@@ -91,16 +91,16 @@ void Error_Handler(void);
 /* USER CODE BEGIN Private defines */
 typedef enum{
 	READ_SENSORS 			 = 0,
-	RUN_MOTORS	  			 = 1,
-	ADJUST_DUTY_CYCLE 		 = 2
+	CHECK_MOTOR_STATE	  	 = 1,
+	PERTURB_AND_OBSERVE		 = 2,
+	RUN_MOTORS				 = 3,
+	UPDATE_SENSOR_VALUES     = 4
 }typedefstates;
 
 #define ADC_12B_MAX_RESOLUTION 4095
 #define SENSOR_RESOLUTION 100
 #define V_SENS_MAX 5
 #define I_SENS_MAX 5
-
-
 
 /* USER CODE END Private defines */
 

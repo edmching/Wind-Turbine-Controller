@@ -50,7 +50,6 @@
 /* USER CODE BEGIN Includes */
 #include "stdbool.h"
 #include "steppermotor.h"
-#include "math.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -72,7 +71,7 @@
 
 /* USER CODE BEGIN PV */
 volatile bool g_is_conversion_ready = false;
-volatile uint32_t g_adc_val[2], g_adc_buf[ADC_BUFFER_LENGTH];
+volatile uint32_t g_adc_val[NUM_OF_CONVERSIONS], g_adc_buf[ADC_BUFFER_LENGTH];
 Stepmotor_Status motor_status;
 /* USER CODE END PV */
 
@@ -126,37 +125,37 @@ int main(void)
   uint16_t voltage[2], current[2];
   uint32_t power[2];
   uint8_t duty_cycle;
+  int conversion_ready;
  
   HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &g_adc_buf, ADC_BUFFER_LENGTH);
-
-  //wait to get first sample
-  //TODO: implement better critical section
-  __disable_irq();
-  int conversion_ready = g_is_conversion_ready;
-  __enable_irq();
-  while(conversion_ready != true){
-	  __disable_irq();
-	  conversion_ready = g_is_conversion_ready;
-	  __enable_irq();
-  }
-
-
-  //calculate initial values
-  voltage[0] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
-  current[0] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
-  power[0] = voltage[0]*current[0];
-
-  printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d", g_adc_val[0], voltage[1], voltage[0]);
-  printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d", g_adc_val[1], current[1], current[0]);
-
-  __disable_irq();
-  g_is_conversion_ready = false;
-  __enable_irq();
-
 
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
   duty_cycle = 50*168/100; //50% duty cycle
   htim1.Instance->CCR1 = duty_cycle;
+
+	//wait to get first sample
+	//TODO: implement better critical section
+	__disable_irq();
+	conversion_ready = g_is_conversion_ready;
+	__enable_irq();
+	while(conversion_ready != true){
+	  __disable_irq();
+	  conversion_ready = g_is_conversion_ready;
+	  __enable_irq();
+
+	}
+
+	//calculate initial values
+	voltage[0] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
+	current[0] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
+	power[0] = voltage[0]*current[0];
+
+	printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d\n", g_adc_val[0], voltage[1], voltage[0]);
+	printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d\n", g_adc_val[1], current[1], current[0]);
+
+	__disable_irq();
+	g_is_conversion_ready = false;
+	__enable_irq();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -168,7 +167,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	__disable_irq();
-	conversion_ready = g_is_conversion_ready;
+	int conversion_ready = g_is_conversion_ready;
 	__enable_irq();
 	if(conversion_ready == true)
 	{
@@ -182,7 +181,7 @@ int main(void)
 	  duty_cycle = Perturb_N_Observe(power, voltage, current, duty_cycle);
 
 	  htim1.Instance->CCR1 = duty_cycle;
-	  printf("\r\n power[1] = %d, power[0] = %d, duty_cycle = %d %\n", power[1], power[0], duty_cycle*100/168);
+	  printf("\r\n power[1] = %d, power[0] = %d, duty_cycle = %d \n", power[1], power[0], duty_cycle*100/168);
 
 	  //updates the previous values
 	  voltage[0] = voltage[1];
@@ -251,7 +250,7 @@ uint8_t Perturb_N_Observe(uint32_t power[], uint16_t voltage[], uint16_t current
   uint8_t new_duty_cycle = duty_cycle;
   const int duty_cycle_step = 1;
 
-  printf("\r\n delta_power = %d, delta_voltage = %d", delta_power, delta_voltage);
+  printf("\r\n delta_power = %d, delta_voltage = %d \n", delta_power, delta_voltage);
 
   /*
    * if dp/dv > 0, increase duty cycle
