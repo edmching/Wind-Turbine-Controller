@@ -78,7 +78,7 @@ Stepmotor_Status motor_status;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-uint8_t Perturb_N_Observe(uint32_t power[], uint16_t voltage[], uint16_t current[], uint8_t duty_cycle);
+uint16_t Perturb_N_Observe(uint32_t power[], uint16_t voltage[],  uint16_t duty_cycle);
 float map_values(int32_t val, int32_t input_min, int32_t input_max, int32_t output_min, int32_t output_max);
 /* USER CODE END PFP */
 
@@ -120,15 +120,17 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
- 
+  /*stepmotor initialization*/
+  StepmotorGPIOInit(&motor_status);
+  stepmotor_state motor_state = MOTOR_IS_STOPPED;
+  uint16_t angle, previous_angle;
+  int16_t diff_angle = 0;
+  int32_t steps_to_move = 0;
+
   /* assume v > 0, i > 0  */
   uint16_t voltage[2], current[2];
   uint32_t power[2];
-  uint8_t duty_cycle;
-  volatile uint16_t angle, previous_angle;
-  volatile int16_t diff_angle = 0;
-  stepmotor_state motor_state = MOTOR_IS_STOPPED;
-  volatile int32_t steps_to_move = 0;
+  uint16_t duty_cycle;
  
   HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &g_adc_buf, ADC_BUFFER_LENGTH);
 
@@ -177,17 +179,15 @@ int main(void)
     {
 
       /*read mppt sens data*/
-    	/*
       voltage[1] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
       current[1] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
       power[1] = voltage[1]*current[1];
-		*/
+
       /* read wind vane data */
       angle = map_values(g_adc_val[2], 0, ADC_12B_MAX_RESOLUTION, 0, 360);
       diff_angle = angle - previous_angle;
 
-      printf("\r\n adc_value2 = %d, angle = %d, previous_angle = %d, difference_angle = %d \n",
-      g_adc_val[2], angle, previous_angle, diff_angle);
+      //printf("\r\n adc_value2 = %d, angle = %d, previous_angle = %d, difference_angle = %d \n", g_adc_val[2], angle, previous_angle, diff_angle);
 
       //updates new position
       if(motor_state == MOTOR_IS_STOPPED)
@@ -205,25 +205,24 @@ int main(void)
     
       motor_state =  Stepmotor_run_halfstep(&motor_status);
 
-      /*
-      printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d\n", g_adc_val[0], voltage[1], voltage[0]);
-      printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d\n", g_adc_val[1], current[1], current[0]);
+     // printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d\n", g_adc_val[0], voltage[1], voltage[0]);
+     // printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d\n", g_adc_val[1], current[1], current[0]);
 
-      duty_cycle = Perturb_N_Observe(power, voltage, current, duty_cycle);
+      duty_cycle = Perturb_N_Observe(power, voltage, duty_cycle);
 
       htim1.Instance->CCR1 = duty_cycle;
-      printf("\r\n power[1] = %d, power[0] = %d, duty_cycle = %d \n", power[1], power[0], duty_cycle*100/168);
+     // printf("\r\n power[1] = %d, power[0] = %d, duty_cycle = %d \n", power[1], power[0], duty_cycle*100/168);
 
       //updates the previous values
       voltage[0] = voltage[1];
       current[0] = current[1];
       power[0] = power[1];
-		*/
+
       __disable_irq();
       g_is_conversion_ready = false;
       __enable_irq();
     }
-    //HAL_Delay(500);
+
   }
   /* USER CODE END 3 */
 }
@@ -273,14 +272,14 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-uint8_t Perturb_N_Observe(uint32_t power[], uint16_t voltage[], uint16_t current[], uint8_t duty_cycle) //might need to change to signed because voltage
+uint16_t Perturb_N_Observe(uint32_t power[], uint16_t voltage[], uint16_t duty_cycle) //might need to change to signed because voltage
 {
   int32_t delta_power = power[1] - power[0];
   int32_t delta_voltage = voltage[1] - voltage[0];
-  uint8_t new_duty_cycle = duty_cycle;
-  const int duty_cycle_step = 1;
+  uint16_t new_duty_cycle = duty_cycle;
+  const int8_t duty_cycle_step = 1;
 
-  printf("\r\n delta_power = %d, delta_voltage = %d \n", delta_power, delta_voltage);
+ printf("\r\n delta_power = %d, delta_voltage = %d, duty_cycle = %d", delta_power, delta_voltage, duty_cycle*100/168);
 
   /*
    * if dp/dv > 0, increase duty cycle
