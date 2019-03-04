@@ -95,7 +95,12 @@ typedef enum{
 	ADJUST_DUTY_CYCLE 		 = 2
 }typedefstates;
 
+#define ADC_12B_MAX_RESOLUTION 4095
 #define SENSOR_RESOLUTION 100
+#define V_SENS_MAX 5
+#define I_SENS_MAX 5
+
+
 
 /* USER CODE END Private defines */
 

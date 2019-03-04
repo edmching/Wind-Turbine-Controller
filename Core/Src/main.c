@@ -140,10 +140,10 @@ int main(void)
 	  __enable_irq();
   }
 
+
   //calculate initial values
-  //voltage[0] = map_values(g_adc_val[1], 0, 4095, 0, 5*SENSOR_RESOLUTION);
-  voltage[0] = (SENSOR_RESOLUTION*5*g_adc_val[0])/4095;
-  current[0] = (SENSOR_RESOLUTION*5*g_adc_val[1])/4095;
+  voltage[0] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
+  current[0] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
   power[0] = voltage[0]*current[0];
 
   printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d", g_adc_val[0], voltage[1], voltage[0]);
@@ -155,7 +155,7 @@ int main(void)
 
 
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-  duty_cycle = 50/100; //50% duty cycle
+  duty_cycle = 50*168/100; //50% duty cycle
   htim1.Instance->CCR1 = duty_cycle;
   /* USER CODE END 2 */
 
@@ -172,8 +172,8 @@ int main(void)
 	__enable_irq();
 	if(conversion_ready == true)
 	{
-	  voltage[1] = (100*5*g_adc_val[0])/4095;
-	  current[1] = (100*5*g_adc_val[1])/4095;
+	  voltage[1] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
+	  current[1] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
 	  power[1] = voltage[1]*current[1];
 
 	  printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d\n", g_adc_val[0], voltage[1], voltage[0]);
@@ -182,14 +182,12 @@ int main(void)
 	  duty_cycle = Perturb_N_Observe(power, voltage, current, duty_cycle);
 
 	  htim1.Instance->CCR1 = duty_cycle;
-	  printf("\r\n power[1] = %d, power[0] = %d, duty_cycle = %d %\n", power[1],power[0], duty_cycle*100/168);
+	  printf("\r\n power[1] = %d, power[0] = %d, duty_cycle = %d %\n", power[1], power[0], duty_cycle*100/168);
 
 	  //updates the previous values
 	  voltage[0] = voltage[1];
 	  current[0] = current[1];
 	  power[0] = power[1];
-
-
 
 	  __disable_irq();
 	  g_is_conversion_ready = false;
@@ -289,7 +287,7 @@ uint8_t Perturb_N_Observe(uint32_t power[], uint16_t voltage[], uint16_t current
 float map_values(int32_t val, int32_t input_min, int32_t input_max, int32_t output_min, int32_t output_max)
 {
 	float slope = 1.0 * (output_max - output_min)/(input_max-input_min);
-	return (val - input_min)*(slope+0.5) + output_min; // 0.5 is for rounding
+	return (val - input_min)*(slope) + output_min; // 0.5 is for rounding
 }
 /* USER CODE END 4  */
 
