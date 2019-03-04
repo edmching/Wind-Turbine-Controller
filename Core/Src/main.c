@@ -271,7 +271,7 @@ uint8_t Perturb_N_Observe(uint32_t power[], uint16_t voltage[], uint16_t current
   return new_duty_cycle;
 }
 /* USER CODE END 4 
-/**
+/*
   * @brief  This function is executed in case of error occurrence.
   * @retval None
   */
