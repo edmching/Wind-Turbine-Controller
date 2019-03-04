@@ -125,11 +125,10 @@ int main(void)
   uint16_t voltage[2], current[2];
   uint32_t power[2];
   uint8_t duty_cycle;
-  bool conversion_ready;
-  uint8_t angle, previous_angle;
-  int8_t diff_angle;
+  volatile uint16_t angle, previous_angle;
+  volatile int16_t diff_angle = 0;
   stepmotor_state motor_state = MOTOR_IS_STOPPED;
-  uint16_t steps_to_move;
+  volatile int32_t steps_to_move = 0;
  
   HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &g_adc_buf, ADC_BUFFER_LENGTH);
 
@@ -139,7 +138,7 @@ int main(void)
 
 	//wait to get first sample
 	__disable_irq();
-	conversion_ready = g_is_conversion_ready;
+	bool conversion_ready = g_is_conversion_ready;
 	__enable_irq();
 	while(conversion_ready != true){
 	  __disable_irq();
@@ -151,12 +150,12 @@ int main(void)
 	//calculate initial values
 	voltage[0] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
 	current[0] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
-    previous_angle = map_values(g_adc_val[2], 0, ADC_12B_MAX_RESOLUTION, 0, 360);
+	previous_angle = map_values(g_adc_val[2], 0, ADC_12B_MAX_RESOLUTION, 0, 360);
 	power[0] = voltage[0]*current[0];
 
 	printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d\n", g_adc_val[0], voltage[1], voltage[0]);
 	printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d\n", g_adc_val[1], current[1], current[0]);
-    printf("\r\n adc_value2 = %d, previous_angle= %d\n", g_adc_val[2], previous_angle);
+	printf("\r\n adc_value2 = %d, previous_angle= %d\n", g_adc_val[2], previous_angle);
 
 	__disable_irq();
 	g_is_conversion_ready = false;
@@ -172,32 +171,25 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     __disable_irq();
-    int conversion_ready = g_is_conversion_ready;
+    conversion_ready = g_is_conversion_ready;
     __enable_irq();
     if(conversion_ready == true)
     {
+
       /*read mppt sens data*/
+    	/*
       voltage[1] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
       current[1] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
       power[1] = voltage[1]*current[1];
-
+		*/
       /* read wind vane data */
       angle = map_values(g_adc_val[2], 0, ADC_12B_MAX_RESOLUTION, 0, 360);
       diff_angle = angle - previous_angle;
 
-      printf("\r\n adc_value0 = %d, angle = %d, previous_angle = %d, difference_angle = %d \n",
+      printf("\r\n adc_value2 = %d, angle = %d, previous_angle = %d, difference_angle = %d \n",
       g_adc_val[2], angle, previous_angle, diff_angle);
 
-      printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d\n", g_adc_val[0], voltage[1], voltage[0]);
-      printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d\n", g_adc_val[1], current[1], current[0]);
-
-      duty_cycle = Perturb_N_Observe(power, voltage, current, duty_cycle);
-
-      htim1.Instance->CCR1 = duty_cycle;
-      printf("\r\n power[1] = %d, power[0] = %d, duty_cycle = %d \n", power[1], power[0], duty_cycle*100/168);
-
-      //update new position
-      //TODO: test updated stepmotor drivers
+      //updates new position
       if(motor_state == MOTOR_IS_STOPPED)
       {
         if(diff_angle > 0){
@@ -213,11 +205,20 @@ int main(void)
     
       motor_state =  Stepmotor_run_halfstep(&motor_status);
 
+      /*
+      printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d\n", g_adc_val[0], voltage[1], voltage[0]);
+      printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d\n", g_adc_val[1], current[1], current[0]);
+
+      duty_cycle = Perturb_N_Observe(power, voltage, current, duty_cycle);
+
+      htim1.Instance->CCR1 = duty_cycle;
+      printf("\r\n power[1] = %d, power[0] = %d, duty_cycle = %d \n", power[1], power[0], duty_cycle*100/168);
+
       //updates the previous values
       voltage[0] = voltage[1];
       current[0] = current[1];
       power[0] = power[1];
-
+		*/
       __disable_irq();
       g_is_conversion_ready = false;
       __enable_irq();
