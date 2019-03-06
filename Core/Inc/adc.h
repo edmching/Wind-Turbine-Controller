@@ -54,7 +54,8 @@ extern ADC_HandleTypeDef hadc1;
 
 /* USER CODE BEGIN Private defines */
 #define NUM_OF_CONVERSIONS         3
-#define ADC_BUFFER_LENGTH		   21276
+#define ADC_BUFFER_LENGTH		   4260 //4260/3 = 1420 samples per sensor
+// 21276/3 = 7092 samples per sensor
 
 extern volatile bool g_is_conversion_ready;
 extern volatile uint32_t g_adc_val[NUM_OF_CONVERSIONS], g_adc_buf[ADC_BUFFER_LENGTH];

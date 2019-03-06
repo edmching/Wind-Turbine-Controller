@@ -101,6 +101,8 @@ typedef enum{
 #define SENSOR_RESOLUTION 100
 #define V_SENS_MAX 5
 #define I_SENS_MAX 5
+#define DUTY_CYCLE_MIN 0
+#define DUTY_CYCLE_MAX 168
 
 /* USER CODE END Private defines */
 

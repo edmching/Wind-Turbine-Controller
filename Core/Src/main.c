@@ -78,7 +78,7 @@ Stepmotor_Status motor_status;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-uint16_t Perturb_N_Observe(uint32_t power[], uint16_t voltage[],  uint16_t duty_cycle);
+uint16_t Perturb_N_Observe(uint32_t power[], uint16_t voltage[], uint16_t current[], uint16_t duty_cycle);
 float map_values(int32_t val, int32_t input_min, int32_t input_max, int32_t output_min, int32_t output_max);
 /* USER CODE END PFP */
 
@@ -179,9 +179,6 @@ int main(void)
     __enable_irq();
     if(conversion_ready == true)
     {
-		__disable_irq();
-		g_is_conversion_ready = false;
-		__enable_irq();
       /*read mppt sens data*/
       voltage[1] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
       current[1] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
@@ -191,12 +188,15 @@ int main(void)
       angle = map_values(g_adc_val[2], 0, ADC_12B_MAX_RESOLUTION, 0, 360);
       diff_angle = angle - previous_angle;
 
-      //printf("\r\n adc_value2 = %d, angle = %d, previous_angle = %d, difference_angle = %d \n", g_adc_val[2], angle, previous_angle, diff_angle);
+      __disable_irq();
+      g_is_conversion_ready = false;
+      __enable_irq();
 
+      //printf("\r\n adc_value2 = %d, angle = %d, previous_angle = %d, difference_angle = %d \n", g_adc_val[2], angle, previous_angle, diff_angle);
      // printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d\n", g_adc_val[0], voltage[1], voltage[0]);
      // printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d\n", g_adc_val[1], current[1], current[0]);
 
-      duty_cycle = Perturb_N_Observe(power, voltage, duty_cycle);
+      duty_cycle = Perturb_N_Observe(power, voltage, current, duty_cycle);
 
       htim1.Instance->CCR1 = duty_cycle;
 
@@ -204,8 +204,6 @@ int main(void)
       voltage[0] = voltage[1];
       current[0] = current[1];
       power[0] = power[1];
-
-
     }
 
     /*do other stuff while waiting for conversion */
@@ -275,14 +273,15 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-uint16_t Perturb_N_Observe(uint32_t power[], uint16_t voltage[], uint16_t duty_cycle) //might need to change to signed because voltage
+uint16_t Perturb_N_Observe(uint32_t power[], uint16_t voltage[], uint16_t current[], uint16_t duty_cycle) //might need to change to signed because voltage
 {
   int32_t delta_power = power[1] - power[0];
   int32_t delta_voltage = voltage[1] - voltage[0];
   uint16_t new_duty_cycle = duty_cycle;
   const int8_t duty_cycle_step = 1;
 
- printf("\r\n delta_power = %d, delta_voltage = %d, duty_cycle = %d", delta_power, delta_voltage, duty_cycle*100/168);
+ printf("\r\n power = %d, voltage = %d, current = %d, delta_power = %d, delta_voltage = %d, duty_cycle = %d",
+		 power[1], voltage[1], current[1], delta_power, delta_voltage, duty_cycle*100/168);
 
   /*
    * if dp/dv > 0, increase duty cycle
@@ -290,23 +289,23 @@ uint16_t Perturb_N_Observe(uint32_t power[], uint16_t voltage[], uint16_t duty_c
    */
   if(delta_power > 0){
     if(delta_voltage > 0){
-    	if(new_duty_cycle < 168){
+    	if(new_duty_cycle < DUTY_CYCLE_MAX){
     		new_duty_cycle += duty_cycle_step;
     	}
     }
     else if(delta_voltage < 0){
-    	if(new_duty_cycle > 0)
+    	if(new_duty_cycle > DUTY_CYCLE_MIN)
     		new_duty_cycle -= duty_cycle_step;
     }
   }
   else if (delta_power < 0){
     if(delta_voltage > 0){
-    	if(new_duty_cycle > 0){
+    	if(new_duty_cycle > DUTY_CYCLE_MIN){
     		new_duty_cycle-= duty_cycle_step;
     	}
     }
     else if(delta_voltage < 0){
-    	if(new_duty_cycle < 168){
+    	if(new_duty_cycle < DUTY_CYCLE_MAX){
     		new_duty_cycle += duty_cycle_step;
     	}
     }

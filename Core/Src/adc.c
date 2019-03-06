@@ -189,7 +189,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 	for(int i = 0; i<potent_arr_length; ++i){
 		accumulator0 += g_adc_buf[3*i]; //firsts
 		accumulator1 += g_adc_buf[3*i + 1]; //seconds
-		accumulator2 += g_adc_buf[3*i + 2];
+		accumulator2 += g_adc_buf[3*i + 2]; //thirds
 	}
     g_adc_val[0] = accumulator0/potent_arr_length;
     g_adc_val[1] = accumulator1/potent_arr_length;
