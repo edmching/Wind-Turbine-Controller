@@ -109,6 +109,12 @@ void Stepmotor_set_goal_position(Stepmotor_Status* motor_status, int32_t _steps_
 	}
 }
 
+void Stepmotor_set_direction(Stepmotor_Status* motor_status, direction __direction)
+{
+	motor_status->_direction = __direction;
+}
+
+////////////////UNUSED FUNCTIONS////////////////////////////
 //untested and not working as intended
 void Stepmotor_set_reference_position(Stepmotor_Status* motor_status)
 {
@@ -116,11 +122,7 @@ void Stepmotor_set_reference_position(Stepmotor_Status* motor_status)
 	motor_status->current_position   = 0;
 }
 
-void Stepmotor_set_direction(Stepmotor_Status* motor_status, direction __direction)
-{
-	motor_status->_direction = __direction;
-}
-
+//unused
 void StepmotorMoveAngleHalfStep(int angle, direction _direction)
 {
 
