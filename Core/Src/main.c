@@ -122,16 +122,19 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   /*stepmotor initialization*/
+  /*
   StepmotorGPIOInit(&motor_status);
   stepmotor_state motor_state = MOTOR_IS_STOPPED;
   uint16_t angle, previous_angle;
   int16_t diff_angle = 0;
   int32_t steps_to_move = 0;
 
-  /* assume v > 0, i > 0  */
+  /// assume v > 0, i > 0
   uint16_t voltage[2], current[2];
   uint32_t power[2];
+  */
   uint16_t duty_cycle;
+
  
   HAL_TIM_Base_Start(&htim3);
   HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &g_adc_buf, ADC_BUFFER_LENGTH);
@@ -140,6 +143,7 @@ int main(void)
 
   duty_cycle = 50*168/100; //50% duty cycle
   htim1.Instance->CCR1 = duty_cycle;
+  bool conversion_ready = g_is_conversion_ready;
 
   /*
 	//wait to get first sample
@@ -179,15 +183,14 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	/*check if converison is finished*/
-	 timerValue = __HAL_TIM_GET_COUNTER(&htim3);
-	 printf("\r\n timerValue %d, adc_val = %d",timerValue, g_adc_val[0] );
-
-	 /*
     __disable_irq();
     conversion_ready = g_is_conversion_ready;
     __enable_irq();
     if(conversion_ready == true)
     {
+   	 timerValue = __HAL_TIM_GET_COUNTER(&htim3);
+   	 printf("\r\n timerValue %d, adc_val = %d", timerValue, g_adc_val[0] );
+    	/*
       ///read mppt sens data//
       voltage[1] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
       current[1] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
@@ -213,8 +216,9 @@ int main(void)
       voltage[0] = voltage[1];
       current[0] = current[1];
       power[0] = power[1];
+      */
     }
-
+    /*
     ///do other stuff while waiting for conversion///
     //updates new position
     if(motor_state == MOTOR_IS_STOPPED)

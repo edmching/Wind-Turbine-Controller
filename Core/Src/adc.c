@@ -195,6 +195,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
     g_adc_val[1] = accumulator1/potent_arr_length;
     g_adc_val[2] = accumulator2/potent_arr_length;
 
+
    __disable_irq();
 	g_is_conversion_ready = true;
 	__enable_irq();
