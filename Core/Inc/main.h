@@ -99,8 +99,12 @@ typedef enum{
 
 #define ADC_12B_MAX_RESOLUTION 4095
 #define SENSOR_RESOLUTION 100
-#define V_SENS_MAX 5
-#define I_SENS_MAX 5
+#define V_SENS_MAX 10
+#define ADC_V_SENS_MAX 3710
+#define I_SENS_MAX 20
+#define I_SENS_MIN 0
+#define ADC_I_SENS_MIN 3103 // 2.5/8.058*10^-4 = 3103
+#define ADC_I_SENS_MAX 3710
 #define DUTY_CYCLE_MIN 0
 #define DUTY_CYCLE_MAX 168
 
