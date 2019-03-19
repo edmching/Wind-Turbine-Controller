@@ -173,8 +173,8 @@ int main(void)
       __enable_irq();
       delta_angle = angle - previous_angle;
       //printf("\r\n adc_value2 = %d, angle = %d, previous_angle = %d, difference_angle = %d \n", g_adc_val[2], angle, previous_angle, diff_angle);
-      printf("\r\n adc_value0 = %d, voltage[1] = %f, adc_value1 = %d, current[1] = %f, adc_value2 = %d, angle = %f, previous_angle = %f, delta_angle = %f ",
-    		  g_adc_val[0], voltage[1], g_adc_val[1], current[1], g_adc_val[2], angle, previous_angle, delta_angle);
+      printf("\r\n adc_value0 = %d, voltage[1] = %f, adc_value1 = %d, current[1] = %f, adc_value2 = %d, angle = %f, delta_angle = %f ",
+  	  g_adc_val[0], voltage[1], g_adc_val[1], current[1], g_adc_val[2], angle, delta_angle);
 
       //updates the previous values
       voltage[0] = voltage[1];
