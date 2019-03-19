@@ -93,7 +93,7 @@ float map_fvalues(float val, float input_min, float input_max, float output_min,
   * @retval int
   */
 int main(void)
-{
+ {
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -126,11 +126,19 @@ int main(void)
   /* assume v > 0, i > 0  */
   float voltage[2], current[2];
   const float v_transfer_ratio = 39.0/139.0;
-  const float adc_val_to_volts = 0.00080586;
-  uint32_t angle;
+  const float adc_val_to_volts = 3.3/4095.0;
+  const float I_sens_adc_zero_val =  2968.0;
+  const float I_sens_adc_3V3_val = 4095;
+  const uint16_t pot_zero_angle = 1861;
+  const uint16_t pot_max_angle = 3575;
+  float angle, previous_angle, delta_angle;
   uint32_t power[2];
   uint16_t duty_cycle;
   bool conversion_ready;
+  float vtest = 0.0;
+  angle = 0.0;
+  previous_angle = 0.0;
+  delta_angle = 0.0;
  
   HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &g_adc_buf, ADC_BUFFER_LENGTH);
 
@@ -155,22 +163,23 @@ int main(void)
     {
       //read mppt sens data
       voltage[1] = (g_adc_val[0]*adc_val_to_volts)/(v_transfer_ratio);
-      current[1] = map_fvalues(g_adc_val[1]*adc_val_to_volts, 2.5, 3.3, 0, 20);
-
+      current[1] = map_fvalues(g_adc_val[1], I_sens_adc_zero_val, I_sens_adc_3V3_val, 0.0, 20.0);
+      //vtest = g_adc_val[2]*adc_val_to_volts;
       //read wind vane data
-      angle = map_values(g_adc_val[2], 0, ADC_12B_MAX_RESOLUTION, 0, 360);
+      angle = map_fvalues(g_adc_val[2], pot_zero_angle, pot_max_angle, 0.0, 360.0);
 
       __disable_irq();
       g_is_conversion_ready = false;
       __enable_irq();
-
+      delta_angle = angle - previous_angle;
       //printf("\r\n adc_value2 = %d, angle = %d, previous_angle = %d, difference_angle = %d \n", g_adc_val[2], angle, previous_angle, diff_angle);
-      printf("\r\n adc_value0 = %d, voltage[1] = %f, voltage[0]= %f, adc_value1 = %d, current[1] = %f, current[0] = %f",
-    		  g_adc_val[0], voltage[1], voltage[0], g_adc_val[1], current[1], current[0]);
+      printf("\r\n adc_value0 = %d, voltage[1] = %f, adc_value1 = %d, current[1] = %f, adc_value2 = %d, angle = %f, previous_angle = %f, delta_angle = %f ",
+    		  g_adc_val[0], voltage[1], g_adc_val[1], current[1], g_adc_val[2], angle, previous_angle, delta_angle);
 
       //updates the previous values
       voltage[0] = voltage[1];
       current[0] = current[1];
+      previous_angle = angle;
     }
   }
   /* USER CODE END 3 */
