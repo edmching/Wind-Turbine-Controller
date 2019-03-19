@@ -121,121 +121,40 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-  /*stepmotor initialization*/
-  /*
-  StepmotorGPIOInit(&motor_status);
-  stepmotor_state motor_state = MOTOR_IS_STOPPED;
-  uint16_t angle, previous_angle;
-  int16_t diff_angle = 0;
-  int32_t steps_to_move = 0;
-
-  /// assume v > 0, i > 0
-  uint16_t voltage[2], current[2];
-  uint32_t power[2];
-  */
-  uint16_t duty_cycle;
-
  
   HAL_TIM_Base_Start(&htim3);
   HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &g_adc_buf, ADC_BUFFER_LENGTH);
 
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-
-  duty_cycle = 50*168/100; //50% duty cycle
-  htim1.Instance->CCR1 = duty_cycle;
   bool conversion_ready = g_is_conversion_ready;
 
-  /*
-	//wait to get first sample
-	__disable_irq();
-	bool conversion_ready = g_is_conversion_ready;
-	__enable_irq();
-	while(conversion_ready != true){
-	  __disable_irq();
-	  conversion_ready = g_is_conversion_ready;
-	  __enable_irq();
-
-	}
-
-	//calculate initial values
-	//probably a good idea to initialize everything
-	voltage[0] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
-	current[0] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
-	previous_angle = map_values(g_adc_val[2], 0, ADC_12B_MAX_RESOLUTION, 0, 360);
-    angle = map_values(g_adc_val[2], 0, ADC_12B_MAX_RESOLUTION, 0, 360);
-	power[0] = voltage[0]*current[0];
-	//printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d\n", g_adc_val[0], voltage[1], voltage[0]);
-	//printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d\n", g_adc_val[1], current[1], current[0]);
-	//printf("\r\n adc_value2 = %d, previous_angle= %d\n", g_adc_val[2], previous_angle);
-
-	__disable_irq();
-	g_is_conversion_ready = false;
-	__enable_irq();
-	*/
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	uint16_t timerValue = 0;
+	uint32_t prev_adc_val, curr_adc_val;
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
 	/*check if converison is finished*/
-    __disable_irq();
+	__disable_irq();
     conversion_ready = g_is_conversion_ready;
     __enable_irq();
     if(conversion_ready == true)
     {
    	 timerValue = __HAL_TIM_GET_COUNTER(&htim3);
-   	 printf("\r\n timerValue %d, adc_val = %d", timerValue, g_adc_val[0] );
-    	/*
-      ///read mppt sens data//
-      voltage[1] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
-      current[1] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
-      power[1] = voltage[1]*current[1];
+   	 curr_adc_val = g_adc_val[0];
 
-      ///read wind vane data //
-      angle = map_values(g_adc_val[2], 0, ADC_12B_MAX_RESOLUTION, 0, 360);
-      diff_angle = angle - previous_angle;
+   	printf("\r\n timerValue %d, curr_adc_val = %d, prev_adc_val = %d", timerValue, curr_adc_val, prev_adc_val );
 
-      __disable_irq();
-      g_is_conversion_ready = false;
-      __enable_irq();
-
-      //printf("\r\n adc_value2 = %d, angle = %d, previous_angle = %d, difference_angle = %d \n", g_adc_val[2], angle, previous_angle, diff_angle);
-     // printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d\n", g_adc_val[0], voltage[1], voltage[0]);
-     // printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d\n", g_adc_val[1], current[1], current[0]);
-
-      duty_cycle = Perturb_N_Observe(power, voltage, current, duty_cycle);
-
-      htim1.Instance->CCR1 = duty_cycle;
-
-      //updates the previous values
-      voltage[0] = voltage[1];
-      current[0] = current[1];
-      power[0] = power[1];
-      */
-    }
-    /*
-    ///do other stuff while waiting for conversion///
-    //updates new position
-    if(motor_state == MOTOR_IS_STOPPED)
-    {
-      if(diff_angle > 0){
-        steps_to_move = diff_angle/(float) (FULL_ROTATATION_IN_DEG/NUM_STEPS_360_DEG);
-        Stepmotor_set_goal_position(&motor_status, steps_to_move);
-      }
-      else if(diff_angle < 0){
-        steps_to_move = diff_angle/(float) (FULL_ROTATATION_IN_DEG/NUM_STEPS_360_DEG);
-        Stepmotor_set_goal_position(&motor_status, steps_to_move);
-      }
-      previous_angle = angle;
+   	 prev_adc_val = curr_adc_val;
+   	__disable_irq();
+     g_is_conversion_ready = false;
+     __enable_irq();
     }
 
-    motor_state =  Stepmotor_run_halfstep(&motor_status);
-    */
   }
 
   /* USER CODE END 3 */
