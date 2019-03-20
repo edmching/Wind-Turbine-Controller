@@ -122,7 +122,7 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
  
-  HAL_TIM_Base_Start(&htim3);
+  HAL_TIM_Base_Start_IT(&htim3);
   HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &g_adc_buf, ADC_BUFFER_LENGTH);
 
   bool conversion_ready = g_is_conversion_ready;
@@ -140,19 +140,21 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	/*check if converison is finished*/
 	__disable_irq();
-    conversion_ready = g_is_conversion_ready;
+  conversion_ready = g_is_conversion_ready;
     __enable_irq();
     if(conversion_ready == true)
-    {
+   {
+   // HAL_TIM_Base_Stop_IT(&htim3);
    	 timerValue = __HAL_TIM_GET_COUNTER(&htim3);
    	 curr_adc_val = g_adc_val[0];
 
-   	printf("\r\n timerValue %d, curr_adc_val = %d, prev_adc_val = %d", timerValue, curr_adc_val, prev_adc_val );
+   printf("\r\n timerValue %d, curr_adc_val = %d, prev_adc_val = %d", timerValue, curr_adc_val, prev_adc_val );
 
    	 prev_adc_val = curr_adc_val;
    	__disable_irq();
      g_is_conversion_ready = false;
      __enable_irq();
+   //  HAL_TIM_Base_Start_IT(&htim3);
     }
 
   }

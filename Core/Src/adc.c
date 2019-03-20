@@ -39,6 +39,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "adc.h"
+#include "tim.h"
 
 /* USER CODE BEGIN 0 */
 
@@ -181,6 +182,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 /* USER CODE BEGIN 1 */
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
+
 	uint32_t accumulator0 = 0;
 	uint32_t accumulator1 = 0;
     uint32_t accumulator2 = 0;
@@ -194,10 +196,11 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
     g_adc_val[0] = accumulator0/potent_arr_length;
     g_adc_val[1] = accumulator1/potent_arr_length;
     g_adc_val[2] = accumulator2/potent_arr_length;
-
-   // __disable_irq();
+    //printf("ADC conversion finish! \r\n");
+   __disable_irq();
 	g_is_conversion_ready = true;
-	//__enable_irq();
+   __enable_irq();
+
 }
 /* USER CODE END 1 */
 
