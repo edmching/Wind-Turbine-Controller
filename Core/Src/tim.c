@@ -110,7 +110,7 @@ void MX_TIM3_Init(void)
 {
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_OC_InitTypeDef sConfigOC = {0};
+  //TIM_OC_InitTypeDef sConfigOC = {0};
 
   // 84MHz/168kHz = 500Hz = 2ms
   htim3.Instance = TIM3;
