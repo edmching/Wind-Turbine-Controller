@@ -49,7 +49,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stdbool.h"
-#include "steppermotor.h"
+#include "app.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -72,7 +72,6 @@
 /* USER CODE BEGIN PV */
 volatile bool g_is_conversion_ready = false;
 volatile uint32_t g_adc_val[NUM_OF_CONVERSIONS], g_adc_buf[ADC_BUFFER_LENGTH];
-Stepmotor_Status motor_status;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -93,7 +92,7 @@ float map_fvalues(float val, float input_min, float input_max, float output_min,
   * @retval int
   */
 int main(void)
- {
+{
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -115,6 +114,7 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
+  StepperMotor_App_Init();
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_USART2_UART_Init();
@@ -127,7 +127,7 @@ int main(void)
   float voltage[2], current[2];
   const float v_transfer_ratio = 39.0/139.0;
   const float adc_val_to_volts = 3.3/4095.0;
-  const float I_sens_adc_zero_val =  2968.0;
+  const float I_sens_adc_zero_val = 2968.0;
   const float I_sens_adc_3V3_val = 4095;
   const uint16_t pot_zero_angle = 1861;
   const uint16_t pot_max_angle = 3575;
@@ -139,13 +139,18 @@ int main(void)
   angle = 0.0;
   previous_angle = 0.0;
   delta_angle = 0.0;
- 
+
+
   HAL_TIM_Base_Start_IT(&htim3);
   HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &g_adc_buf, ADC_BUFFER_LENGTH);
 
- // HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
- // duty_cycle = 50*168/100; //50% duty cycle
-  //htim1.Instance->CCR1 = duty_cycle;
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+  duty_cycle = 50*168/100; //50% duty cycle
+  htim1.Instance->CCR1 = duty_cycle;
+
+  BSP_MotorControl_GoTo(0, 3200);
+
+  BSP_MotorControl_WaitWhileActive(0);
 
   /* USER CODE END 2 */
 
@@ -168,6 +173,8 @@ int main(void)
       voltage[1] = (g_adc_val[0]*adc_val_to_volts)/(v_transfer_ratio);
       current[1] = map_fvalues(g_adc_val[1], I_sens_adc_zero_val, I_sens_adc_3V3_val, 0.0, 20.0);
       //vtest = g_adc_val[2]*adc_val_to_volts;
+
+
       //read wind vane data
       angle = map_fvalues(g_adc_val[2], pot_zero_angle, pot_max_angle, 0.0, 360.0);
 

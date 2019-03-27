@@ -6,64 +6,39 @@
  */
 #include "app.h"
 
-/*
- * TODO: restructure code
-void init_mppt_sens(mppt_sens_data* sens_data)
-{
+void StepperMotor_App_Init(void){
+//----- Init of the Motor control library
+/* Set the L6474 library to use 1 device */
+  BSP_MotorControl_SetNbDevices(BSP_MOTOR_CONTROL_BOARD_ID_L6474, 1);
+  /* When BSP_MotorControl_Init is called with NULL pointer,                  */
+  /* the L6474 registers and parameters are set with the predefined values from file   */
+  /* l6474_target_config.h, otherwise the registers are set using the   */
+  /* L6474_Init_t pointer structure                */
+  /* The first call to BSP_MotorControl_Init initializes the first device     */
+  /* whose Id is 0.                                                           */
+  /* The nth call to BSP_MotorControl_Init initializes the nth device         */
+  /* whose Id is n-1.                                                         */
+  BSP_MotorControl_Init(BSP_MOTOR_CONTROL_BOARD_ID_L6474, NULL);
 
-	//wait to get first sample
-	__disable_irq();
-	int conversion_ready = g_is_conversion_ready;
-	__enable_irq();
-	while(conversion_ready != true){
-	  __disable_irq();
-	  conversion_ready = g_is_conversion_ready;
-	  __enable_irq();
+  /* Attach the function Error_Handler (defined below) to the error Handler*/
+ // BSP_MotorControl_AttachErrorHandler(Error_Handler);
 
-	}
+//----- Autocheck sequence
 
-	//calculate initial values
-	sens_data->voltage[0] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
-	sens_data->current[0] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
-	sens_data->power[0] = sens_data->voltage[0]*sens_data->current[0];
+  /* Set Systick Interrupt to the highest priority */
+  HAL_NVIC_SetPriority(SysTick_IRQn, 0x0, 0x0);
 
-	printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d", g_adc_val[0], sens_data->voltage[1], sens_data->voltage[0]);
-	printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d", g_adc_val[1], sens_data->current[1], sens_data->current[0]);
+  /* Set full step mode */
+  BSP_MotorControl_SelectStepMode(0, STEP_MODE_1_16);
 
-	__disable_irq();
-	g_is_conversion_ready = false;
-	__enable_irq();
+  /*To disable power outputs when stepper is not running */
+  BSP_MotorControl_SetStopMode(0, HIZ_MODE);
+
+  /* Set min speed to 8 pps */
+  //BSP_MotorControl_SetMinSpeed(0, 8);
+
+  /* Set max speed to 8 pps */
+  BSP_MotorControl_SetMaxSpeed(0, 2400);
+  BSP_MotorControl_SetDirection(0, FORWARD);
 }
 
-void run_mppt(mppt_sens_data* sens_data)
-{
-
-	__disable_irq();
-	int conversion_ready = g_is_conversion_ready;
-	__enable_irq();
-	if(conversion_ready == true)
-	{
-	  sens_data->voltage[1] = map_values(g_adc_val[0], 0, ADC_12B_MAX_RESOLUTION, 0, V_SENS_MAX*SENSOR_RESOLUTION);
-	  sens_data->current[1] = map_values(g_adc_val[1], 0, ADC_12B_MAX_RESOLUTION, 0, I_SENS_MAX*SENSOR_RESOLUTION);
-	  sens_data->power[1] = sens_data->voltage[1]*sens_data->current[1];
-
-	  printf("\r\n adc_value0 = %d, voltage[1] = %d, voltage[0]= %d\n", g_adc_val[0], sens_data->voltage[1], sens_data->voltage[0]);
-	  printf("\r\n adc_value1 = %d, current[1] = %d, current[0] = %d\n", g_adc_val[1], sens_data->current[1], sens_data->current[0]);
-
-	  sens_data->duty_cycle = Perturb_N_Observe(sens_data->power, sens_data->voltage, sens_data->current, sens_data->duty_cycle);
-
-	  htim1.Instance->CCR1 = sens_data->duty_cycle;
-	  printf("\r\n power[1] = %d, power[0] = %d, duty_cycle = %d %\n", sens_data->power[1], sens_data->power[0], sens_data->duty_cycle*100/168);
-
-	  //updates the previous values
-	  sens_data->voltage[0] = sens_data->voltage[1];
-	  sens_data->current[0] = sens_data->current[1];
-	  sens_data->power[0] = sens_data->power[1];
-
-	  __disable_irq();
-	  g_is_conversion_ready = false;
-	  __enable_irq();
-	}
-	HAL_Delay(1000);
-}
-*/
