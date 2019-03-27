@@ -120,7 +120,7 @@ int main(void)
   MX_USART2_UART_Init();
   MX_ADC1_Init();
   MX_TIM1_Init();
-  MX_TIM3_Init();
+  //MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
   /* assume v > 0, i > 0  */
@@ -134,23 +134,19 @@ int main(void)
   float angle, previous_angle, delta_angle;
   uint32_t power[2];
   uint16_t duty_cycle;
-  bool conversion_ready;
+  volatile bool conversion_ready;
   float vtest = 0.0;
   angle = 0.0;
   previous_angle = 0.0;
   delta_angle = 0.0;
 
 
-  HAL_TIM_Base_Start_IT(&htim3);
+  //HAL_TIM_Base_Start_IT(&htim3);
   HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &g_adc_buf, ADC_BUFFER_LENGTH);
 
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
   duty_cycle = 50*168/100; //50% duty cycle
   htim1.Instance->CCR1 = duty_cycle;
-
-  BSP_MotorControl_GoTo(0, 3200);
-
-  BSP_MotorControl_WaitWhileActive(0);
 
   /* USER CODE END 2 */
 
@@ -158,6 +154,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	uint16_t timerValue = 0;
 	uint32_t prev_adc_val, curr_adc_val;
+	volatile int16_t number_of_steps = 0;
+	motorState_t motor_state = INACTIVE;
   while (1)
   {
     /* USER CODE END WHILE */
@@ -176,21 +174,37 @@ int main(void)
 
 
       //read wind vane data
+#ifdef WIND_VANE
       angle = map_fvalues(g_adc_val[2], pot_zero_angle, pot_max_angle, 0.0, 360.0);
-
+#else
+      angle = map_fvalues(g_adc_val[2], 0, 4095, 0.0, 360.0);
+#endif
       __disable_irq();
       g_is_conversion_ready = false;
       __enable_irq();
+
       delta_angle = angle - previous_angle;
-      //printf("\r\n adc_value2 = %d, angle = %d, previous_angle = %d, difference_angle = %d \n", g_adc_val[2], angle, previous_angle, diff_angle);
-      printf("\r\n adc_value0 = %d, voltage[1] = %f, adc_value1 = %d, current[1] = %f, adc_value2 = %d, angle = %f, delta_angle = %f ",
-  	  g_adc_val[0], voltage[1], g_adc_val[1], current[1], g_adc_val[2], angle, delta_angle);
+	  number_of_steps = delta_angle/360.0*3200;
+
+	  if(delta_angle > 1){
+		  BSP_MotorControl_Move(0, FORWARD, number_of_steps);
+	  }
+	  else if (delta_angle < -1){
+		  BSP_MotorControl_Move(0, BACKWARD, -number_of_steps);
+	  }
+
+      printf("\r\n adc_value2 = %d, angle = %f, previous_angle = %f, difference_angle = %f \n", g_adc_val[2], angle, previous_angle, delta_angle);
+      //printf("\r\n adc_value0 = %d, voltage[1] = %f, adc_value1 = %d, current[1] = %f, adc_value2 = %d, angle = %f, delta_angle = %f ",
+  	  //g_adc_val[0], voltage[1], g_adc_val[1], current[1], g_adc_val[2], angle, delta_angle);
 
       //updates the previous values
       voltage[0] = voltage[1];
       current[0] = current[1];
       previous_angle = angle;
+
+	  BSP_MotorControl_WaitWhileActive(0);
     }
+
   }
   /* USER CODE END 3 */
 }

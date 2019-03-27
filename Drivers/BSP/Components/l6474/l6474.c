@@ -774,7 +774,7 @@ void L6474_GoTo(uint8_t deviceId, int32_t targetPosition)
   
   /* Compute the number of steps to perform */
   steps = targetPosition - devicePrm[deviceId].currentPosition;
-  
+
   if (steps >= 0) 
   {
     devicePrm[deviceId].stepsToTake = steps;

@@ -31,14 +31,18 @@ void StepperMotor_App_Init(void){
   /* Set full step mode */
   BSP_MotorControl_SelectStepMode(0, STEP_MODE_1_16);
 
-  /*To disable power outputs when stepper is not running */
-  BSP_MotorControl_SetStopMode(0, HIZ_MODE);
+  ///To disable power outputs when stepper is not running
+  ///causes shaft to move around
+  //BSP_MotorControl_SetStopMode(0, HIZ_MODE);
 
   /* Set min speed to 8 pps */
   //BSP_MotorControl_SetMinSpeed(0, 8);
 
-  /* Set max speed to 8 pps */
+  /* Set max speed to 1200step/s */
   BSP_MotorControl_SetMaxSpeed(0, 2400);
+  BSP_MotorControl_SetMinSpeed(0, 2400);
+  //BSP_MotorControl_SetAcceleration(0,480);
+ // BSP_MotorControl_SetDeceleration(0,160);
   BSP_MotorControl_SetDirection(0, FORWARD);
 }
 
