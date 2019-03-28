@@ -39,7 +39,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "adc.h"
-#include "tim.h"
 
 /* USER CODE BEGIN 0 */
 
@@ -58,13 +57,13 @@ void MX_ADC1_Init(void)
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc1.Init.ScanConvMode = ENABLE; //scan 3 adc channels and convert them
-  hadc1.Init.ContinuousConvMode = ENABLE; //want the next conversion to start when timer overflows
+  hadc1.Init.ScanConvMode = ENABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_RISING;
-  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START; //trigger sample when timer overflows
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 3;
+  hadc1.Init.NbrOfConversion = 4;
   hadc1.Init.DMAContinuousRequests = ENABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
@@ -96,6 +95,14 @@ void MX_ADC1_Init(void)
   {
     Error_Handler();
   }
+  /**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
+  */
+  sConfig.Channel = ADC_CHANNEL_8;
+  sConfig.Rank = 4;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
 
 }
 
@@ -112,15 +119,22 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     __HAL_RCC_ADC1_CLK_ENABLE();
   
     __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
     /**ADC1 GPIO Configuration    
     PA0-WKUP     ------> ADC1_IN0
     PA1     ------> ADC1_IN1
-    PA4     ------> ADC1_IN4 
+    PA4     ------> ADC1_IN4
+    PB0     ------> ADC1_IN8 
     */
     GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_4;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_0;
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     /* ADC1 DMA Init */
     /* ADC1 Init */
@@ -164,9 +178,12 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     /**ADC1 GPIO Configuration    
     PA0-WKUP     ------> ADC1_IN0
     PA1     ------> ADC1_IN1
-    PA4     ------> ADC1_IN4 
+    PA4     ------> ADC1_IN4
+    PB0     ------> ADC1_IN8 
     */
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_4);
+
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_0);
 
     /* ADC1 DMA DeInit */
     HAL_DMA_DeInit(adcHandle->DMA_Handle);
@@ -186,17 +203,22 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 	uint32_t accumulator0 = 0;
 	uint32_t accumulator1 = 0;
     uint32_t accumulator2 = 0;
-	uint32_t potent_arr_length = ADC_BUFFER_LENGTH/3;
+    uint32_t accumulator3 = 0;
+	uint32_t pot_buf_length = ADC_BUFFER_LENGTH/NUM_OF_CONVERSIONS;
 
-	for(int i = 0; i<potent_arr_length; ++i){
-		accumulator0 += g_adc_buf[3*i]; //firsts
-		accumulator1 += g_adc_buf[3*i + 1]; //seconds
-		accumulator2 += g_adc_buf[3*i + 2]; //thirds
+	//average samples
+	for(int i = 0; i<pot_buf_length; ++i){
+		accumulator0 += g_adc_buf[NUM_OF_CONVERSIONS*i + 0]; //first adc val
+		accumulator1 += g_adc_buf[NUM_OF_CONVERSIONS*i + 1]; //second adc val
+		accumulator2 += g_adc_buf[NUM_OF_CONVERSIONS*i + 2]; //third adc val
+		accumulator3 += g_adc_buf[NUM_OF_CONVERSIONS*i + 3]; //fourth adc val
 	}
-    g_adc_val[0] = accumulator0/potent_arr_length;
-    g_adc_val[1] = accumulator1/potent_arr_length;
-    g_adc_val[2] = accumulator2/potent_arr_length;
-    //printf("ADC conversion finish! \r\n");
+
+    g_adc_val[0] = accumulator0/pot_buf_length;
+    g_adc_val[1] = accumulator1/pot_buf_length;
+    g_adc_val[2] = accumulator2/pot_buf_length;
+    g_adc_val[4] = accumulator3/pot_buf_length;
+
    __disable_irq();
 	g_is_conversion_ready = true;
    __enable_irq();

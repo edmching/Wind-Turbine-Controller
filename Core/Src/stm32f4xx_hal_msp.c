@@ -182,44 +182,7 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef* htim_pwm)
     /* Enable the timer global Interrupt */
     HAL_NVIC_EnableIRQ(BSP_MOTOR_CONTROL_BOARD_PWM1_IRQn);
   }
-  else if(htim_pwm->Instance == BSP_MOTOR_CONTROL_BOARD_TIMER_PWM2)
-  {
-    /* Peripheral clock enable */
-    __BSP_MOTOR_CONTROL_BOARD_TIMER_PWM2_CLCK_ENABLE();
 
-    /* GPIO configuration */
-    GPIO_InitStruct.Pin = BSP_MOTOR_CONTROL_BOARD_PWM_2_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
-    GPIO_InitStruct.Alternate = BSP_MOTOR_CONTROL_BOARD_AFx_TIMx_PWM2;
-    HAL_GPIO_Init(BSP_MOTOR_CONTROL_BOARD_PWM_2_PORT, &GPIO_InitStruct);
-
-    /* Set Interrupt Group Priority of Timer Interrupt*/
-    HAL_NVIC_SetPriority(BSP_MOTOR_CONTROL_BOARD_PWM2_IRQn, 4, 0);
-
-    /* Enable the timer2 global Interrupt */
-    HAL_NVIC_EnableIRQ(BSP_MOTOR_CONTROL_BOARD_PWM2_IRQn);
-
-  }
-  else if(htim_pwm->Instance == BSP_MOTOR_CONTROL_BOARD_TIMER_PWM3)
-  {
-    /* Peripheral clock enable */
-    __BSP_MOTOR_CONTROL_BOARD_TIMER_PWM3_CLCK_ENABLE();
-
-    /* GPIO configuration */
-    GPIO_InitStruct.Pin = BSP_MOTOR_CONTROL_BOARD_PWM_3_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
-    HAL_GPIO_Init(BSP_MOTOR_CONTROL_BOARD_PWM_3_PORT, &GPIO_InitStruct);
-
-    /* Set Interrupt Group Priority of Timer Interrupt*/
-    HAL_NVIC_SetPriority(BSP_MOTOR_CONTROL_BOARD_PWM3_IRQn, 3, 0);
-
-    /* Enable the timer global Interrupt */
-    HAL_NVIC_EnableIRQ(BSP_MOTOR_CONTROL_BOARD_PWM3_IRQn);
-  }
 }
 
 /**
@@ -238,23 +201,7 @@ void HAL_TIM_PWM_MspDeInit(TIM_HandleTypeDef* htim_pwm)
     HAL_GPIO_DeInit(BSP_MOTOR_CONTROL_BOARD_PWM_1_PORT, BSP_MOTOR_CONTROL_BOARD_PWM_1_PIN);
 
   }
-  else if(htim_pwm->Instance == BSP_MOTOR_CONTROL_BOARD_TIMER_PWM2)
-  {
-    /* Peripheral clock disable */
-    __BSP_MOTOR_CONTROL_BOARD_TIMER_PWM2_CLCK_DISABLE();
 
-    /* GPIO Deconfiguration */
-    HAL_GPIO_DeInit(BSP_MOTOR_CONTROL_BOARD_PWM_2_PORT, BSP_MOTOR_CONTROL_BOARD_PWM_2_PIN);
-
-  }
-  else if(htim_pwm->Instance == BSP_MOTOR_CONTROL_BOARD_TIMER_PWM3)
-  {
-    /* Peripheral clock disable */
-    __BSP_MOTOR_CONTROL_BOARD_TIMER_PWM3_CLCK_DISABLE();
-
-    /* GPIO Deconfiguration */
-    HAL_GPIO_DeInit(BSP_MOTOR_CONTROL_BOARD_PWM_3_PORT, BSP_MOTOR_CONTROL_BOARD_PWM_3_PIN);
-  }
 }
 
 /**
@@ -269,22 +216,6 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
     if (BSP_MotorControl_GetDeviceState(0) != INACTIVE)
     {
       BSP_MotorControl_StepClockHandler(0);
-    }
-  }
-  if ((htim->Instance == BSP_MOTOR_CONTROL_BOARD_TIMER_PWM2)&& (htim->Channel == BSP_MOTOR_CONTROL_BOARD_HAL_ACT_CHAN_TIMER_PWM2))
-  {
-    if (BSP_MotorControl_GetDeviceState(1) != INACTIVE)
-    {
-      BSP_MotorControl_StepClockHandler(1);
-    }
-  }
-  if ((htim->Instance == BSP_MOTOR_CONTROL_BOARD_TIMER_PWM3)&& (htim->Channel == BSP_MOTOR_CONTROL_BOARD_HAL_ACT_CHAN_TIMER_PWM3))
-  {
-    HAL_GPIO_TogglePin(BSP_MOTOR_CONTROL_BOARD_PWM_3_PORT, BSP_MOTOR_CONTROL_BOARD_PWM_3_PIN);
-    if ((BSP_MotorControl_GetDeviceState(2) != INACTIVE)&&
-        (HAL_GPIO_ReadPin(BSP_MOTOR_CONTROL_BOARD_PWM_3_PORT, BSP_MOTOR_CONTROL_BOARD_PWM_3_PIN) == GPIO_PIN_SET))
-    {
-      BSP_MotorControl_StepClockHandler(2);
     }
   }
 }

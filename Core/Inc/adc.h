@@ -53,7 +53,7 @@
 extern ADC_HandleTypeDef hadc1;
 
 /* USER CODE BEGIN Private defines */
-#define NUM_OF_CONVERSIONS         3
+#define NUM_OF_CONVERSIONS         4
 #define ADC_BUFFER_LENGTH		   4260 //
 
 extern volatile bool g_is_conversion_ready;

@@ -44,7 +44,6 @@
 #include "dma.h"
 #include "tim.h"
 #include "usart.h"
-#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -92,7 +91,7 @@ float map_fvalues(float val, float input_min, float input_max, float output_min,
   * @retval int
   */
 int main(void)
-{
+	{
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -110,17 +109,16 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  ///Initialize L6474 Stepper motor Driver controller
+  StepperMotor_App_Init();
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-  StepperMotor_App_Init();
-  MX_GPIO_Init();
   MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_ADC1_Init();
-  MX_TIM1_Init();
-  //MX_TIM3_Init();
+  MX_TIM10_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
   /* assume v > 0, i > 0  */
@@ -135,27 +133,25 @@ int main(void)
   uint32_t power[2];
   uint16_t duty_cycle;
   volatile bool conversion_ready;
-  float vtest = 0.0;
-  angle = 0.0;
-  previous_angle = 0.0;
-  delta_angle = 0.0;
 
 
   //HAL_TIM_Base_Start_IT(&htim3);
   HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &g_adc_buf, ADC_BUFFER_LENGTH);
 
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_4);
+  HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
   duty_cycle = 50*168/100; //50% duty cycle
-  htim1.Instance->CCR1 = duty_cycle;
-
+  htim10.Instance->CCR1 = duty_cycle;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	uint16_t timerValue = 0;
-	uint32_t prev_adc_val, curr_adc_val;
-	volatile int16_t number_of_steps = 0;
-	motorState_t motor_state = INACTIVE;
+  uint16_t timerValue = 0;
+  uint32_t prev_adc_val, curr_adc_val;
+  volatile int16_t number_of_steps = 0;
+  motorState_t motor_state = INACTIVE;
+  bool sample_at_power_on = true;
+  volatile int32_t target_position, home_position;
+
   while (1)
   {
     /* USER CODE END WHILE */
@@ -172,26 +168,32 @@ int main(void)
       current[1] = map_fvalues(g_adc_val[1], I_sens_adc_zero_val, I_sens_adc_3V3_val, 0.0, 20.0);
       //vtest = g_adc_val[2]*adc_val_to_volts;
 
-
       //read wind vane data
 #ifdef WIND_VANE
       angle = map_fvalues(g_adc_val[2], pot_zero_angle, pot_max_angle, 0.0, 360.0);
 #else
-      angle = map_fvalues(g_adc_val[2], 0, 4095, 0.0, 360.0);
+      angle = map_fvalues(g_adc_val[2], 0, 4095, 0.0, 280.0);
 #endif
       __disable_irq();
       g_is_conversion_ready = false;
       __enable_irq();
 
-      delta_angle = angle - previous_angle;
-	  number_of_steps = delta_angle/360.0*3200;
+      ///On power cycle, we save the first sample, so that have a val to compare it
+      if(sample_at_power_on == true){
+    	  previous_angle = angle;
+          voltage[0] = voltage[1];
+          current[0] = current[1];
+          sample_at_power_on = false;
 
-	  if(delta_angle > 1){
-		  BSP_MotorControl_Move(0, FORWARD, number_of_steps);
-	  }
-	  else if (delta_angle < -1){
-		  BSP_MotorControl_Move(0, BACKWARD, -number_of_steps);
-	  }
+          home_position = angle/300.0*2489;
+          BSP_MotorControl_SetHome(0, -home_position);
+      }
+
+      motor_state = BSP_MotorControl_GetDeviceState(0);
+      target_position = angle/300.0*2489;
+      if(motor_state == INACTIVE){
+    	  BSP_MotorControl_GoTo(0, target_position);
+      }
 
       printf("\r\n adc_value2 = %d, angle = %f, previous_angle = %f, difference_angle = %f \n", g_adc_val[2], angle, previous_angle, delta_angle);
       //printf("\r\n adc_value0 = %d, voltage[1] = %f, adc_value1 = %d, current[1] = %f, adc_value2 = %d, angle = %f, delta_angle = %f ",
@@ -201,8 +203,6 @@ int main(void)
       voltage[0] = voltage[1];
       current[0] = current[1];
       previous_angle = angle;
-
-	  BSP_MotorControl_WaitWhileActive(0);
     }
 
   }
@@ -294,13 +294,18 @@ uint16_t Perturb_N_Observe(uint32_t power[], uint16_t voltage[], uint16_t curren
 
   return new_duty_cycle;
 }
-
+/*
+ *Mapping int32 values
+*/
 float map_values(int32_t val, int32_t input_min, int32_t input_max, int32_t output_min, int32_t output_max)
 {
 	float slope = 1.0 * (output_max - output_min)/(input_max-input_min);
 	return (val - input_min)*(slope) + output_min;
 }
 
+/*
+ *Mapping floating point values
+*/
 float map_fvalues(float val, float input_min, float input_max, float output_min, float output_max)
 {
 	float slope = 1.0 * (output_max - output_min)/(input_max-input_min);

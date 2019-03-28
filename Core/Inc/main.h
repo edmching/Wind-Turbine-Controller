@@ -82,12 +82,18 @@ void Error_Handler(void);
 #define USART_TX_GPIO_Port GPIOA
 #define USART_RX_Pin GPIO_PIN_3
 #define USART_RX_GPIO_Port GPIOA
-#define TMS_Pin GPIO_PIN_13
-#define TMS_GPIO_Port GPIOA
-#define TCK_Pin GPIO_PIN_14
-#define TCK_GPIO_Port GPIOA
-#define SWO_Pin GPIO_PIN_3
-#define SWO_GPIO_Port GPIOB
+#define PWM1_Pin GPIO_PIN_7
+#define PWM1_GPIO_Port GPIOC
+#define DIR1_Pin GPIO_PIN_8
+#define DIR1_GPIO_Port GPIOA
+#define RST_Pin GPIO_PIN_9
+#define RST_GPIO_Port GPIOA
+#define FLAG_Pin GPIO_PIN_10
+#define FLAG_GPIO_Port GPIOA
+#define SPI_CS_Pin GPIO_PIN_6
+#define SPI_CS_GPIO_Port GPIOB
+#define MOSFET_PWM_Pin GPIO_PIN_8
+#define MOSFET_PWM_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 typedef enum{
 	READ_SENSORS 			 = 0,
