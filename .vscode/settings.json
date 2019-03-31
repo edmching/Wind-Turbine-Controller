@@ -4,7 +4,8 @@
         "steppermotor.h": "c",
         "stat.h": "c",
         "stdlib.h": "c",
-        "time.h": "c"
+        "time.h": "c",
+        "xutility": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

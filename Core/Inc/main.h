@@ -74,7 +74,8 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
-
+float map_values(int32_t val, int32_t input_min, int32_t input_max, int32_t output_min, int32_t output_max);
+float map_fvalues(float val, float input_min, float input_max, float output_min, float output_max);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -95,24 +96,6 @@ void Error_Handler(void);
 #define MOSFET_PWM_Pin GPIO_PIN_8
 #define MOSFET_PWM_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
-typedef enum{
-	READ_SENSORS 			 = 0,
-	CHECK_MOTOR_STATE	  	 = 1,
-	PERTURB_AND_OBSERVE		 = 2,
-	RUN_MOTORS				 = 3,
-	UPDATE_SENSOR_VALUES     = 4
-}typedefstates;
-
-#define ADC_12B_MAX_RESOLUTION 4095
-#define SENSOR_RESOLUTION 100
-#define V_SENS_MAX 10
-#define ADC_V_SENS_MAX 3710
-#define I_SENS_MAX 20
-#define I_SENS_MIN 0
-#define ADC_I_SENS_MIN 3103 // 2.5/8.058*10^-4 = 3103
-#define ADC_I_SENS_MAX 3710
-#define DUTY_CYCLE_MIN 0
-#define DUTY_CYCLE_MAX 168
 
 /* USER CODE END Private defines */
 

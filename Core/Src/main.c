@@ -69,6 +69,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+///shared variables between interrupts
 volatile bool g_is_conversion_ready = false;
 volatile uint32_t g_adc_val[NUM_OF_CONVERSIONS], g_adc_buf[ADC_BUFFER_LENGTH];
 /* USER CODE END PV */
@@ -76,9 +77,7 @@ volatile uint32_t g_adc_val[NUM_OF_CONVERSIONS], g_adc_buf[ADC_BUFFER_LENGTH];
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-uint16_t Perturb_N_Observe(uint32_t power[], uint16_t voltage[], uint16_t current[], uint16_t duty_cycle);
-float map_values(int32_t val, int32_t input_min, int32_t input_max, int32_t output_min, int32_t output_max);
-float map_fvalues(float val, float input_min, float input_max, float output_min, float output_max);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -109,8 +108,10 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
+#ifdef ENABLE_MOTORS
   ///Initialize L6474 Stepper motor Driver controller
   StepperMotor_App_Init();
+#endif
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -120,90 +121,49 @@ int main(void)
   MX_TIM10_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+  SensorVar_t sensVars;
 
-  /* assume v > 0, i > 0  */
-  float voltage[2], current[2];
-  const float v_transfer_ratio = 39.0/139.0;
-  const float adc_val_to_volts = 3.3/4095.0;
-  const float I_sens_adc_zero_val = 2968.0;
-  const float I_sens_adc_3V3_val = 4095;
-  const uint16_t pot_zero_angle = 1861;
-  const uint16_t pot_max_angle = 3575;
-  float angle, previous_angle, delta_angle;
-  uint32_t power[2];
-  uint16_t duty_cycle;
-  volatile bool conversion_ready;
-
-
-  //HAL_TIM_Base_Start_IT(&htim3);
+  HAL_TIM_Base_Start(&htim2);
   HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &g_adc_buf, ADC_BUFFER_LENGTH);
 
+  //Start PWM signal for MOSFET
   HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
-  duty_cycle = 50*168/100; //50% duty cycle
-  htim10.Instance->CCR1 = duty_cycle;
+  sensVars.duty_cycle = 50*168/100; //50% duty cycle
+  htim10.Instance->CCR1 = sensVars.duty_cycle;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  uint16_t timerValue = 0;
-  uint32_t prev_adc_val, curr_adc_val;
-  volatile int16_t number_of_steps = 0;
-  motorState_t motor_state = INACTIVE;
-  bool sample_at_power_on = true;
-  volatile int32_t target_position, home_position;
+  volatile bool conversion_ready;
 
-  while (1)
+  while(1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	//check if converison is finished//
-    __disable_irq();
+    __disable_irq(); //TODO: change to disable only DMA interrupts
     conversion_ready = g_is_conversion_ready;
     __enable_irq();
-    if(conversion_ready == true)
-    {
-      //read mppt sens data
-      voltage[1] = (g_adc_val[0]*adc_val_to_volts)/(v_transfer_ratio);
-      current[1] = map_fvalues(g_adc_val[1], I_sens_adc_zero_val, I_sens_adc_3V3_val, 0.0, 20.0);
-      //vtest = g_adc_val[2]*adc_val_to_volts;
 
-      //read wind vane data
-#ifdef WIND_VANE
-      angle = map_fvalues(g_adc_val[2], pot_zero_angle, pot_max_angle, 0.0, 360.0);
-#else
-      angle = map_fvalues(g_adc_val[2], 0, 4095, 0.0, 280.0);
+    if(conversion_ready == true){
+
+      ReadSensor_Task(&sensVars);
+
+#ifdef ENABLE_MPPT
+      MPPT_Task(&sensVars);
 #endif
-      __disable_irq();
+
+#ifdef  ENABLE_MOTORS
+      StepMotor_Task(&sensVars);
+#endif
+
+#ifdef  ENABLE_PRINTF
+      PrintVariables(&sensVars); //to be replaced by transmit
+#endif
+      __disable_irq(); //TODO: change to disable only DMA interrupts
       g_is_conversion_ready = false;
       __enable_irq();
-
-      ///On power cycle, we save the first sample, so that have a val to compare it
-      if(sample_at_power_on == true){
-    	  previous_angle = angle;
-          voltage[0] = voltage[1];
-          current[0] = current[1];
-          sample_at_power_on = false;
-
-          home_position = angle/300.0*2489;
-          BSP_MotorControl_SetHome(0, -home_position);
       }
-
-      motor_state = BSP_MotorControl_GetDeviceState(0);
-      target_position = angle/300.0*2489;
-      if(motor_state == INACTIVE){
-    	  BSP_MotorControl_GoTo(0, target_position);
-      }
-
-      printf("\r\n adc_value2 = %d, angle = %f, previous_angle = %f, difference_angle = %f \n", g_adc_val[2], angle, previous_angle, delta_angle);
-      //printf("\r\n adc_value0 = %d, voltage[1] = %f, adc_value1 = %d, current[1] = %f, adc_value2 = %d, angle = %f, delta_angle = %f ",
-  	  //g_adc_val[0], voltage[1], g_adc_val[1], current[1], g_adc_val[2], angle, delta_angle);
-
-      //updates the previous values
-      voltage[0] = voltage[1];
-      current[0] = current[1];
-      previous_angle = angle;
-    }
 
   }
   /* USER CODE END 3 */
@@ -254,46 +214,6 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-uint16_t Perturb_N_Observe(uint32_t power[], uint16_t voltage[], uint16_t current[], uint16_t duty_cycle) //might need to change to signed because voltage
-{
-  int32_t delta_power = power[1] - power[0];
-  int32_t delta_voltage = voltage[1] - voltage[0];
-  uint16_t new_duty_cycle = duty_cycle;
-  const int8_t duty_cycle_step = 1;
-
- /*printf("\r\n power = %d, voltage = %d, current = %d, delta_power = %d, delta_voltage = %d, duty_cycle = %d",
-		 power[1], voltage[1], current[1], delta_power, delta_voltage, duty_cycle*100/168);
-	*/
-  /*
-   * if dp/dv > 0, increase duty cycle
-   * if dp/dv < 0, decrease duty cycle
-   */
-  if(delta_power > 0){
-    if(delta_voltage > 0){
-    	if(new_duty_cycle < DUTY_CYCLE_MAX){
-    		new_duty_cycle += duty_cycle_step;
-    	}
-    }
-    else if(delta_voltage < 0){
-    	if(new_duty_cycle > DUTY_CYCLE_MIN)
-    		new_duty_cycle -= duty_cycle_step;
-    }
-  }
-  else if (delta_power < 0){
-    if(delta_voltage > 0){
-    	if(new_duty_cycle > DUTY_CYCLE_MIN){
-    		new_duty_cycle-= duty_cycle_step;
-    	}
-    }
-    else if(delta_voltage < 0){
-    	if(new_duty_cycle < DUTY_CYCLE_MAX){
-    		new_duty_cycle += duty_cycle_step;
-    	}
-    }
-  }
-
-  return new_duty_cycle;
-}
 /*
  *Mapping int32 values
 */
@@ -312,6 +232,7 @@ float map_fvalues(float val, float input_min, float input_max, float output_min,
 	return (val - input_min)*(slope) + output_min;
 }
 /* USER CODE END 4 */
+
 
 /**
   * @brief  This function is executed in case of error occurrence.
