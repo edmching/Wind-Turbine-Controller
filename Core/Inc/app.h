@@ -50,8 +50,8 @@
 
 #define DUTY_CYCLE_STEP_SIZE            1
 
-#define DUTY_CYCLE_MIN 0
-#define DUTY_CYCLE_MAX 168
+#define DUTY_CYCLE_MIN 					0
+#define DUTY_CYCLE_MAX 					168
 
 typedef enum{
     READ_SENSORS,
