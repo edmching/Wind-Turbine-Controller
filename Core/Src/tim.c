@@ -54,10 +54,10 @@ void MX_TIM2_Init(void)
   TIM_OC_InitTypeDef sConfigOC = {0};
 
   /*
-   *	84MHz/(83+1)(1999 +1) = 500Hz => 2ms
+   *	84MHz/(84)(50000) = 100Hz => 10xms
    */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 84-1;
+  htim2.Init.Prescaler = 840-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 10000 - 1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -90,7 +90,7 @@ void MX_TIM10_Init(void)
   htim10.Instance = TIM10;
   htim10.Init.Prescaler = 1-1;
   htim10.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim10.Init.Period = 168-1;
+  htim10.Init.Period = PWM_TIMER_PERIOD-1;
   htim10.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   if (HAL_TIM_Base_Init(&htim10) != HAL_OK)
   {

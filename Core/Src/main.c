@@ -123,12 +123,14 @@ int main(void)
   /* USER CODE BEGIN 2 */
   SensorVar_t sensVars;
 
+
+  /* ADC sampling timer */
   HAL_TIM_Base_Start(&htim2);
   HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &g_adc_buf, ADC_BUFFER_LENGTH);
 
   //Start PWM signal for MOSFET
   HAL_TIM_PWM_Start(&htim10, TIM_CHANNEL_1);
-  sensVars.duty_cycle = 50*168/100; //50% duty cycle
+  sensVars.duty_cycle = 50*PWM_TIMER_PERIOD/100; //50% duty cycle
   htim10.Instance->CCR1 = sensVars.duty_cycle;
   /* USER CODE END 2 */
 

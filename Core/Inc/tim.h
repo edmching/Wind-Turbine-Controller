@@ -47,7 +47,7 @@
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "app.h"
 /* USER CODE END Includes */
 
 extern TIM_HandleTypeDef htim2;
